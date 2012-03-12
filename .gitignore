@@ -1,3 +1,9 @@
+example/client
+example/log
+example/server
+lib/libev-4.04fixed
+lib/libev
+lib/libev-4.04
 svn-commit.*
 .deps/
 clnt_unittest
