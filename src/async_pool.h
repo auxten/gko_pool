@@ -27,6 +27,9 @@
 
 #include "event.h"
 
+static const int        RBUF_SZ =          (2 * 1024);
+static const int        WBUF_SZ =          (4 * 1024);
+
 /// Thread worker
 struct thread_worker
 {
@@ -39,17 +42,16 @@ struct thread_worker
 };
 
 enum conn_states {
-    conn_listening,  /**< the socket which listens for connections */
-    conn_new_cmd,    /**< Prepare connection for next command */
-    conn_waiting,    /**< waiting for a readable socket */
-    conn_read,       /**< reading in a command line */
-    conn_parse_cmd,  /**< try to parse a command from the input buffer */
-    conn_write,      /**< writing out a simple response */
-    conn_nread,      /**< reading in a fixed number of bytes */
-    conn_swallow,    /**< swallowing unnecessary bytes w/o storing */
-    conn_closing,    /**< closing this connection */
-    conn_mwrite,     /**< writing out many items sequentially */
-    conn_max_state   /**< Max state value (used for assertion) */
+    conn_listening,     /**< now the main schedule thread do the accept */
+    conn_waiting,       /**< waiting for a readable socket */
+    conn_read,          /**< reading the cmd header */
+    conn_nread,         /**< reading in a fixed number of bytes */
+    conn_parse_header,  /**< try to parse the cmd header */
+    conn_parse_cmd,     /**< try to parse a command from the input buffer */
+    conn_write,         /**< writing out a simple response */
+    conn_mwrite,        /**< writing out many items sequentially */
+    conn_closing,       /**< closing this connection */
+    conn_max_state      /**< Max state value (used for assertion) */
 };
 
 /// Connection client
@@ -63,6 +65,7 @@ struct conn_client
     func_t handle_client;
     struct event event;
     int state;
+    int ev_flags;
 
     char *read_buffer;
     unsigned int rbuf_size;
@@ -96,6 +99,23 @@ struct conn_server
     void (* on_data_callback)(int, void *, unsigned int);
 };
 
+enum aread_result {
+    READ_DATA_RECEIVED,
+    READ_HEADER_RECEIVED,
+    READ_NEED_MORE,
+    READ_NO_DATA_RECEIVED,
+    READ_ERROR,            /** an error occured (on the socket) (or client closed connection) */
+    READ_MEMORY_ERROR      /** failed to allocate more memory */
+};
+
+enum awrite_result {
+    WRITE_DATA_SENT,
+    WRITE_HEADER_SENT,
+    WRITE_SENT_MORE,
+    WRITE_NO_DATA_SENT,
+    WRITE_ERROR            /** an error occured (on the socket) (or client closed connection) */
+};
+
 class gko_pool
 {
 private:
@@ -125,14 +145,16 @@ private:
     static void * thread_worker_init(void *arg);
     /// Close conn, shutdown && close
     static void thread_worker_process(int fd, short ev, void *arg);
-    /// Worker's event handler
-    static void worker_event_handler(const int fd, const short which, void *arg);
     /// ReAdd the event
     static bool update_event(conn_client *c, const int new_flags);
     /// State updater
     static void conn_set_state(conn_client *c, enum conn_states state);
     /// Event handler for worker thread
-    void event_handler(const int fd, const short which, void *arg);
+    static void worker_event_handler(const int fd, const short which, void *arg);
+    /// Async read
+    static enum aread_result aread(conn_client *c);
+    /// Async write
+    static enum awrite_result awrite(conn_client *c);
     /// The drive machine of memcached
     static void state_machine(conn_client *c);
     /// Event on data from client

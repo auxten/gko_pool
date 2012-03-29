@@ -745,4 +745,9 @@ static inline void fill_cmd_head(char * cmd, const int msg_len)
         (int) (msg_len - CMD_PREFIX_BYTE);
 }
 
+static inline void parse_cmd_head(const char * cmd, unsigned short * proto_ver, unsigned int * msg_len)
+{
+    *proto_ver = *((unsigned short *) cmd);
+    *msg_len = *((int *) (cmd + CMD_PREFIX_BYTE - sizeof(int))) + CMD_PREFIX_BYTE;
+}
 #endif /** GINGKO_H_ **/

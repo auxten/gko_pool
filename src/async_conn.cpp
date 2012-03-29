@@ -269,10 +269,11 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-void gko_pool::conn_send_data(int fd, void *str, unsigned int len)
+void gko_pool::conn_send_data(int fd, void * arg, unsigned int len)
 {
     int i;
-    char * p = (char *) str;
+    struct conn_client *client = (struct conn_client *) arg;
+    char * p = ((char *) client) + CMD_PREFIX_BYTE;
     i = parse_req(p);
     if (i != 0)
     {
@@ -552,12 +553,23 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         client->client_fd = 0;
         client->client_addr = 0;
         client->client_port = 0;
-        client->rbuf_size = 0;
+
         if (client->read_buffer)
         {
-            delete [] client->read_buffer;
-            client->read_buffer = (char *) NULL;
+            free(client->read_buffer);
         }
+        client->rbuf_size = RBUF_SZ;
+        client->have_read = 0;
+        client->need_read = CMD_PREFIX_BYTE;
+
+        if (client->write_buffer)
+        {
+            free(client->write_buffer);
+        }
+        client->wbuf_size = WBUF_SZ;
+        client->have_write = 0;
+        client->need_write = 0;
+
         /// Delete event
         event_del(&client->event);
         /**
