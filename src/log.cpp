@@ -1,7 +1,7 @@
 /**
  * log.cpp
  *
- *  Created on: Mar 9, 2012
+ *  Created on: 2011-7-13
  *      Author: auxten
  **/
 
@@ -24,7 +24,7 @@ pthread_mutex_t logcut_lock = PTHREAD_MUTEX_INITIALIZER;
  *
  * @see
  * @note
- * @author auxten  <auxtenwpc@gmail.com>
+ * @author auxten <wangpengcheng01@baidu.com> <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
 static const char * LOG_DIC[] =
@@ -35,7 +35,7 @@ static const char * LOG_DIC[] =
  *
  * @see
  * @note
- * @author auxten  <auxtenwpc@gmail.com>
+ * @author auxten <wangpengcheng01@baidu.com> <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
 char * gettimestr(char * time, const char * format)
@@ -55,7 +55,7 @@ char * gettimestr(char * time, const char * format)
  *
  * @see
  * @note
- * @author auxten  <auxtenwpc@gmail.com>
+ * @author auxten <wangpengcheng01@baidu.com> <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
 void gko_log(const u_char log_level, const char *fmt, ...)
@@ -83,29 +83,36 @@ void gko_log(const u_char log_level, const char *fmt, ...)
         }
 
         pthread_mutex_lock(&logcut_lock);
-        counter ++;
-        if (counter % MAX_LOG_REOPEN_LINE == 0)
+        if (gko.opt.logpath[0]  == '\0')
         {
-            if (lastfp)
-            {
-                fclose(lastfp);
-            }
-            lastfp = gko.log_fp;
-            if (counter % MAX_LOG_LINE == 0)
-            {
-                strncpy(oldlogpath, gko.opt.logpath, MAX_PATH_LEN);
-                gettimestr(oldlogpath + strlen(oldlogpath), OLD_LOG_TIME);
-                rename(gko.opt.logpath, oldlogpath);
-            }
-            gko.log_fp = fopen(gko.opt.logpath, "a+");
+            gko.log_fp = stdout;
         }
-        if(UNLIKELY(! gko.log_fp))
+        else
         {
-            gko.log_fp = fopen(gko.opt.logpath, "a+");
-            if(! gko.log_fp)
+            counter ++;
+            if (counter % MAX_LOG_REOPEN_LINE == 0)
             {
-                perror("Cann't open log file");
-                exit(1);
+                if (lastfp)
+                {
+                    fclose(lastfp);
+                }
+                lastfp = gko.log_fp;
+                if (counter % MAX_LOG_LINE == 0)
+                {
+                    strncpy(oldlogpath, gko.opt.logpath, MAX_PATH_LEN);
+                    gettimestr(oldlogpath + strlen(oldlogpath), OLD_LOG_TIME);
+                    rename(gko.opt.logpath, oldlogpath);
+                }
+                gko.log_fp = fopen(gko.opt.logpath, "a+");
+            }
+            if(UNLIKELY(! gko.log_fp))
+            {
+                gko.log_fp = fopen(gko.opt.logpath, "a+");
+                if(! gko.log_fp)
+                {
+                    perror("Cann't open log file");
+                    exit(1);
+                }
             }
         }
         fprintf(gko.log_fp, "%s\n", logstr);

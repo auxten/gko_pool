@@ -9,7 +9,7 @@
 
 /// gingko global stuff
 s_gingko_global_t gko;
-const int T_NUM = 10;
+const int T_NUM = 1;
 
 const s_host_t server =
 {
@@ -21,7 +21,7 @@ void * send_test(void *)
     char msg[MSG_LEN] = "TEST";
     for (int i = 0; i < 10000; i++)
     {
-        if (sendcmd2host(&server, msg, 2, 2) < 0)
+        if (chat_with_host(&server, msg, 2, 2) < 0)
         {
             gko_log(FATAL, "sending quit message failed");
         }
@@ -32,10 +32,10 @@ void * send_test(void *)
 
 int main(int argc, char** argv)
 {
+    gko.opt.to_debug = 1;
     pthread_attr_t g_attr;
     pthread_t vnode_pthread[T_NUM];
     void *status;
-    strncpy(gko.opt.logpath, SERVER_LOG, sizeof(gko.opt.logpath));
 
     if (pthread_attr_init(&g_attr) != 0)
     {

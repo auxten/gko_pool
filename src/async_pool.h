@@ -72,8 +72,10 @@ struct conn_client
     unsigned int need_read;
     unsigned int have_read;
 
+    char *__write_buffer;
     char *write_buffer;
     unsigned int wbuf_size;
+    unsigned int __need_write;
     unsigned int need_write;
     unsigned int have_write;
 
@@ -96,7 +98,7 @@ struct conn_server
     int tcp_reuse;
     int tcp_nodelay;
     struct event ev_accept;
-    void (* on_data_callback)(int, void *, unsigned int);
+    void (* on_data_callback)(void *);
 };
 
 enum aread_result {
@@ -138,7 +140,7 @@ private:
     int port;
     s_option_t * option;
 
-    static void conn_send_data(int fd, void *str, unsigned int len);
+    static void conn_send_data(void *c);
     /// Accept new connection
     static void conn_tcp_server_accept(int fd, short ev, void *arg);
     /// Close conn, shutdown && close
@@ -157,8 +159,6 @@ private:
     static enum awrite_result awrite(conn_client *c);
     /// The drive machine of memcached
     static void state_machine(conn_client *c);
-    /// Event on data from client
-    static void conn_tcp_server_on_data(int fd, short ev, void *arg);
     /// Parse the request return the proper func handle num
     static int parse_req(char *req);
 

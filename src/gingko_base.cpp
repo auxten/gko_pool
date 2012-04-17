@@ -1236,6 +1236,55 @@ int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const 
 }
 
 /**
+ * @brief send cmd msg to host, read response, on succ return 0
+ *
+ * @see
+ * @note
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2011-8-1
+ **/
+int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec)
+{
+    int sock;
+    int result;
+    int msg_len;
+    char new_cmd[MSG_LEN] = {'\0'};
+    char read_result[MSG_LEN];
+
+    sock = connect_host(h, recv_sec, send_sec);
+    if (sock < 0)
+    {
+        gko_log(DEBUG, "sendcmd2host() connect_host error");
+        return -1;
+    }
+    msg_len = snprintf(new_cmd, sizeof(new_cmd), "%s%s", PREFIX_CMD, cmd);
+    if (msg_len <= CMD_PREFIX_BYTE)
+    {
+        gko_log(WARNING, FLF("snprintf error"));
+        close_socket(sock);
+        return -1;
+    }
+    else
+    {
+        fill_cmd_head(new_cmd, msg_len);
+    }
+    result = sendall(sock, new_cmd, msg_len, send_sec);
+    if (result <= 0)
+    {
+        gko_log(FATAL, FLF("sendall failed"));
+        close_socket(sock);
+        return result;
+    }
+    result = readcmd(sock, read_result, MSG_LEN, 5);
+    if (result > 0)
+    {
+        gko_log(TRACE, "%s", read_result);
+    }
+    close_socket(sock);
+    return result;
+}
+
+/**
  * quit func
  */
 void gko_quit(int ret)

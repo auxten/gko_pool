@@ -587,6 +587,8 @@ int writeblock(s_job_t * jo, const u_char * buf, s_block_t * blk);
 void conn_send_data(int fd, void *str, unsigned int len);
 /// send cmd msg to host, not read response, on succ return 0
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
+/// send cmd msg to host, read response, on succ return 0
+int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// try best to read specificed bytes from a file to buf
 int readfileall(int fd, off_t offset, off_t count, char ** buf);
 /// try best to read specificed bytes from a file to buf

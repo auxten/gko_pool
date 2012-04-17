@@ -56,13 +56,15 @@ static func_t g_func_list_s[] =
             test_s,
             g_none_s };
 
-GKO_STATIC_FUNC void * test_s(void *, int)
+GKO_STATIC_FUNC void * test_s(void *p, int)
 {
-    //gko_log(NOTICE, "test");
+    gko_log(NOTICE, "test");
+    conn_client * c = (conn_client *) p;
+    c->need_write = snprintf(c->write_buffer, c->wbuf_size, "server test OK");
     return (void *) 0;
 }
 
-GKO_STATIC_FUNC void * g_none_s(void *, int)
+GKO_STATIC_FUNC void * g_none_s(void *p, int)
 {
     gko_log(NOTICE, "none");
     return (void *) 0;
@@ -79,14 +81,14 @@ GKO_STATIC_FUNC void * g_none_s(void *, int)
  **/
 int main(int argc, char** argv)
 {
+    gko.opt.to_debug = 1;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
     gko.opt.port = SERV_PORT;
-    gko.opt.worker_thread = SERV_ASYNC_THREAD_NUM;
+    gko.opt.worker_thread = 1;
     gko.opt.connlimit = SERV_POOL_SIZE;
     gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;
-    strncpy(gko.opt.logpath, SERVER_LOG, sizeof(gko.opt.logpath));
 
     gko_log(DEBUG, "Debug mode start, i will print tons of log :p!");
 

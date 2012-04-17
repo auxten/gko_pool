@@ -99,14 +99,18 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     struct conn_client *client =
         gko_pool::getInstance()->conn_client_list_get(c_id);
 
+    /// todo calloc every connection comes?
     client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
     client->rbuf_size = RBUF_SZ;
     client->have_read = 0;
     client->need_read = CMD_PREFIX_BYTE;
 
-    client->write_buffer = (char *)calloc(WBUF_SZ, sizeof(char));
+    /// todo calloc every connection comes?
+    client->__write_buffer = (char *)calloc(WBUF_SZ + CMD_PREFIX_BYTE, sizeof(char));
+    client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
     client->wbuf_size = WBUF_SZ;
     client->have_write = 0;
+    client->__need_write = CMD_PREFIX_BYTE;
     client->need_write = 0;
 
     if (client->client_fd)
@@ -402,19 +406,19 @@ enum awrite_result gko_pool::awrite(conn_client *c)
 
     while (1)
     {
-        int to_send = c->need_write - c->have_write;
-        res = send(c->client_fd, c->write_buffer + c->have_write, to_send, 0);
+        int to_send = c->__need_write - c->have_write;
+        res = send(c->client_fd, c->__write_buffer + c->have_write, to_send, 0);
 
         if (res > 0)
         {
             c->have_write += res;
 
-            if (c->need_write > c->have_write)
+            if (c->__need_write > c->have_write)
             {
                 write_result = WRITE_SENT_MORE;
                 continue;
             }
-            else if (c->need_write == c->have_write) /// write enough
+            else if (c->__need_write == c->have_write) /// write enough
             {
                 write_result = WRITE_DATA_SENT;
                 break;
@@ -442,6 +446,8 @@ void gko_pool::state_machine(conn_client *c)
     int nreqs = 3;
     enum aread_result res;
     enum awrite_result ret;
+    unsigned short proto_ver;
+    unsigned int msg_len = 0;
 
     assert(c != NULL);
 
@@ -451,10 +457,12 @@ void gko_pool::state_machine(conn_client *c)
         switch (c->state)
         {
             case conn_listening:
+                gko_log(DEBUG, "state: conn_listening");
                 gko_log(WARNING, "listening state again?!");
                 break;
 
             case conn_waiting:
+                gko_log(DEBUG, "state: conn_waiting");
                 if (!update_event(c, EV_READ | EV_PERSIST))
                 {
                     gko_log(WARNING, "Couldn't update event");
@@ -467,6 +475,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_read:
+                gko_log(DEBUG, "state: conn_read");
                 res = aread(c);
 
                 switch (res)
@@ -494,18 +503,40 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_parse_header:
-                unsigned short proto_ver;
-                unsigned int msg_len;
+                gko_log(DEBUG, "state: conn_parse_header");
                 parse_cmd_head(c->read_buffer, &proto_ver, &msg_len);
-                c->need_read = msg_len;
+                if (msg_len > 0)
+                {
+                    c->need_read = msg_len;
+                    if (c->have_read < c->need_read)
+                    {
+                        conn_set_state(c, conn_read);
+                    }
+                    else if (c->have_read == c->need_read)
+                    {
+                        conn_set_state(c, conn_parse_cmd);
+                    }
+                    else /* have read more than expect */
+                    {
+                        conn_set_state(c, conn_parse_cmd);
+                        gko_log(NOTICE, FLF("have read more than expect"));
+                    }
+                }
+                else
+                {
+                    gko_log(NOTICE, FLF("parse cmd head failed"));
+                    c->need_write = snprintf(c->write_buffer, c->wbuf_size,
+                            "parse cmd head failed");
+                    conn_set_state(c, conn_write);
+                }
 
                 break;
 
             case conn_parse_cmd:     /**< try to parse a command from the input buffer */
+                gko_log(DEBUG, "state: conn_parse_cmd");
                 if (gko_pool::getInstance()->g_server->on_data_callback)
                 {
-                    gko_pool::getInstance()->g_server->on_data_callback(0,
-                            (void *) c, 0);
+                    gko_pool::getInstance()->g_server->on_data_callback((void *) c);
                 }
                 conn_set_state(c, conn_write);
                 if (!update_event(c, EV_WRITE | EV_PERSIST))
@@ -521,10 +552,15 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_nread:         /**< reading in a fixed number of bytes */
+                gko_log(DEBUG, "state: conn_nread");
                 gko_log(FATAL, "NOT Supported yet :p");
                 break;
 
             case conn_write:
+                gko_log(DEBUG, "state: conn_write");
+                c->__need_write = c->need_write + CMD_PREFIX_BYTE;
+                fill_cmd_head(c->__write_buffer, c->__need_write);
+
                 ret = awrite(c);
 
                 switch (ret)
@@ -549,15 +585,18 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_mwrite:
+                gko_log(DEBUG, "state: conn_mwrite");
                 gko_log(FATAL, "NOT Supported yet :p");
                 break;
 
             case conn_closing:
+                gko_log(DEBUG, "state: conn_closing");
                 gko_pool::getInstance()->conn_client_free(c);
                 stop = true;
                 break;
 
             case conn_max_state:
+                gko_log(DEBUG, "state: conn_max_state");
                 assert(false);
                 break;
 

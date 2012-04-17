@@ -241,6 +241,8 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
         gko_log(WARNING, "Server limited: I cannot serve more clients");
         return;
     }
+
+    client->state = conn_waiting;
     /// set blocking
     ///fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)& ~O_NONBLOCK);
 
@@ -269,11 +271,11 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-void gko_pool::conn_send_data(int fd, void * arg, unsigned int len)
+void gko_pool::conn_send_data(void * arg)
 {
     int i;
     struct conn_client *client = (struct conn_client *) arg;
-    char * p = ((char *) client) + CMD_PREFIX_BYTE;
+    char * p = ((char *) client->read_buffer) + CMD_PREFIX_BYTE;
     i = parse_req(p);
     if (i != 0)
     {
@@ -283,162 +285,8 @@ void gko_pool::conn_send_data(int fd, void * arg, unsigned int len)
     {
         gko_log(DEBUG, "got req: %s, index: %d", p, i);
     }
-    (*func_list_p[i])(p, fd);
+    (*func_list_p[i])((void *)client, 0);
     ///gko_log(NOTICE, "read_buffer:%s", p);
-    return;
-}
-
-/**
- * @brief Event on data from client
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-void gko_pool::conn_tcp_server_on_data(int fd, short ev, void *arg)
-{
-    struct conn_client *client = (struct conn_client *) arg;
-    int res;
-    unsigned int buffer_avail;
-    int read_counter = 0;
-    unsigned short proto_ver;
-    int msg_len;
-    char nouse_buf[CMD_PREFIX_BYTE];
-
-    if (!client || !client->client_fd)
-    {
-        return;
-    }
-
-    if (fd != client->client_fd)
-    {
-        /// Sanity
-        gko_pool::getInstance()->conn_client_free(client);
-        return;
-    }
-
-    /// read the proto ver
-    if (read(client->client_fd, &proto_ver, sizeof(proto_ver)) <= 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ///#define EAGAIN      35      /** Resource temporarily unavailable **/
-            ///#define EWOULDBLOCK EAGAIN      /** Operation would block **/
-            ///#define EINPROGRESS 36      /** Operation now in progress **/
-            ///#define EALREADY    37      /** Operation already in progress **/
-            //perror("Socket read error");
-            gko_log(WARNING, "Socket read proto_ver error %d", errno);
-            gko_pool::getInstance()->conn_client_free(client);
-            return;
-        }
-    }
-    if (proto_ver != PROTO_VER)
-    {
-        gko_log(WARNING, FLF("unsupported proto_ver"));
-        return;
-    }
-
-    /// read the nouse_buf
-    if (read(client->client_fd, nouse_buf,
-            CMD_PREFIX_BYTE - sizeof(proto_ver) - sizeof(msg_len)) <= 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ///#define EAGAIN      35      /** Resource temporarily unavailable **/
-            ///#define EWOULDBLOCK EAGAIN      /** Operation would block **/
-            ///#define EINPROGRESS 36      /** Operation now in progress **/
-            ///#define EALREADY    37      /** Operation already in progress **/
-            //perror("Socket read error");
-            gko_log(WARNING, "Socket read nouse_buf error %d", errno);
-            gko_pool::getInstance()->conn_client_free(client);
-            return;
-        }
-    }
-
-    /// read the msg_len
-    if (read(client->client_fd, &msg_len, sizeof(msg_len)) <= 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ///#define EAGAIN      35      /** Resource temporarily unavailable **/
-            ///#define EWOULDBLOCK EAGAIN      /** Operation would block **/
-            ///#define EINPROGRESS 36      /** Operation now in progress **/
-            ///#define EALREADY    37      /** Operation already in progress **/
-            //perror("Socket read error");
-            gko_log(WARNING, "Socket read msg_len error %d", errno);
-            gko_pool::getInstance()->conn_client_free(client);
-            return;
-        }
-    }
-
-    if (!client->read_buffer)
-    {
-        /// Initialize buffer
-        client->read_buffer = new char[CLNT_READ_BUFFER_SIZE];
-        if(! client->read_buffer)
-        {
-        	gko_log(FATAL, "new for client->read_buffer failed");
-        	gko_pool::getInstance()->conn_client_free(client);
-            return;
-        }
-        client->rbuf_size = buffer_avail = CLNT_READ_BUFFER_SIZE;
-    }
-    else
-    {
-        buffer_avail = client->rbuf_size;
-    }
-
-    while ((res = read(client->client_fd, client->read_buffer + read_counter,
-            buffer_avail)) > 0)
-    {
-        ///gko_log(NOTICE, "res: %d",res);
-        ///gko_log(NOTICE, "%s",client->read_buffer+read_counter);
-        read_counter += res;
-//        if ((unsigned int)res == buffer_avail)
-//        {
-//            client->buffer_size *= 2;
-//            char * tmp = client->read_buffer;
-//            client->read_buffer = new char[client->buffer_size];
-//            if (client->read_buffer == NULL)
-//            {
-//                gko_log(FATAL, "realloc error");
-//                conn_client_free(client);
-//                return;
-//            }
-//            memcpy(client->read_buffer, tmp, read_counter);
-//            delete [] tmp;
-//        }
-        buffer_avail = client->rbuf_size - read_counter;
-        if (read_counter == msg_len)
-        {
-            *(client->read_buffer + read_counter) = '\0';
-//            memset(client->read_buffer + read_counter, 0, buffer_avail);
-            break;
-        }
-    }
-    if (res < 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ///#define EAGAIN      35      /** Resource temporarily unavailable **/
-            ///#define EWOULDBLOCK EAGAIN      /** Operation would block **/
-            ///#define EINPROGRESS 36      /** Operation now in progress **/
-            ///#define EALREADY    37      /** Operation already in progress **/
-            //perror("Socket read error");
-            gko_log(WARNING, "Socket read error %d", errno);
-            gko_pool::getInstance()->conn_client_free(client);
-            return;
-        }
-    }
-    ///gko_log(NOTICE, "read_buffer:%s", client->read_buffer);///test
-    if (gko_pool::getInstance()->g_server->on_data_callback)
-    {
-        gko_pool::getInstance()->g_server->on_data_callback(client->client_fd,
-                (void *) client->read_buffer, sizeof(client->read_buffer));
-    }
-    gko_pool::getInstance()->conn_client_free(client);
-
     return;
 }
 
@@ -554,6 +402,7 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         client->client_addr = 0;
         client->client_port = 0;
 
+        /// todo free every connection comes?
         if (client->read_buffer)
         {
             free(client->read_buffer);
@@ -562,12 +411,14 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         client->have_read = 0;
         client->need_read = CMD_PREFIX_BYTE;
 
-        if (client->write_buffer)
+        /// todo free every connection comes?
+        if (client->__write_buffer)
         {
-            free(client->write_buffer);
+            free(client->__write_buffer);
         }
         client->wbuf_size = WBUF_SZ;
         client->have_write = 0;
+        client->__need_write = CMD_PREFIX_BYTE;
         client->need_write = 0;
 
         /// Delete event
