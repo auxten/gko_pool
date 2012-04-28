@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
     gko.opt.port = SERV_PORT;
-    gko.opt.worker_thread = 1;
+    gko.opt.worker_thread = 2;
     gko.opt.connlimit = SERV_POOL_SIZE;
     gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;

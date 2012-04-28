@@ -9,7 +9,7 @@
 
 /// gingko global stuff
 s_gingko_global_t gko;
-const int T_NUM = 1;
+const int T_NUM = 100;
 
 const s_host_t server =
 {
@@ -19,7 +19,7 @@ const s_host_t server =
 void * send_test(void *)
 {
     char msg[MSG_LEN] = "TEST";
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 100; i++)
     {
         if (chat_with_host(&server, msg, 2, 2) < 0)
         {

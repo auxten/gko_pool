@@ -1,6 +1,6 @@
 .PHONY: all client server
 
-INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/include -L../lib/libev/lib -lgko -lev -lgko_zip
+INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/include -L../lib/libev/lib -lgko -lev -lgko_zip -lpthread
 all: client server
 
 server:
