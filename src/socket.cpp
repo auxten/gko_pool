@@ -94,10 +94,6 @@ int nb_connect(const s_host_t * h)
     struct sockaddr_in channel;
     in_addr_t host;
     int addr_len;
-#if HAVE_POLL
-#else
-    fd_set wset;
-#endif /* HAVE_POLL */
 
     addr_len = getaddr_my(h->addr, &host);
     if (FAIL_CHECK(!addr_len))

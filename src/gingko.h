@@ -206,7 +206,7 @@ static const int        VNODE_NUM =             3;
 /// to sizeof an extern array we must define it
 static const int        CMD_COUNT =             9;
 /// IP char length
-static const int        IP_LEN =                16;
+static const int        HOSTNAME_LEN =                256;
 /// -rw-rw-rw-
 static const mode_t     SNAP_FILE_MODE =        0666;
 
@@ -216,13 +216,13 @@ static const int        CREATE_OPEN_FLAG =      (O_WRONLY | O_CREAT | O_NOCTTY);
 static const int        READ_OPEN_FLAG =        (O_RDONLY | O_NOCTTY);
 static const int        WRITE_OPEN_FLAG =       (O_WRONLY | O_NOCTTY);
 
-static const int        MSG_LEN =               (MAX_URI + IP_LEN + 32 + MAX_LONG_INT * 2 + CMD_PREFIX_BYTE);
+static const int        MSG_LEN =               (MAX_URI + HOSTNAME_LEN + 32 + MAX_LONG_INT * 2 + CMD_PREFIX_BYTE);
 static const int        CLNT_READ_BUFFER_SIZE = (MSG_LEN + 10);
 /// limit read rate when read msg larger than this
 static const int        READ_LIMIT_THRESHOLD =  (MSG_LEN + 5);
 
 ///"NEWW 255.255.255.255 65535"
-static const int        SHORT_MSG_LEN =         (4 + 1 + IP_LEN + 1 + 5 + 1 + CMD_PREFIX_BYTE);
+static const int        SHORT_MSG_LEN =         (4 + 1 + HOSTNAME_LEN + 1 + 5 + 1 + CMD_PREFIX_BYTE);
 /// 10s
 static const int        SERV_TRANS_TIME_PLUS =  10000000;
 static const int        JOIN_ERR =              1;
@@ -365,7 +365,7 @@ typedef struct _s_file_t
 /// host structure
 typedef struct _s_host_t
 {
-    char addr[IP_LEN];
+    char addr[HOSTNAME_LEN];
     int port;
 } s_host_t;
 

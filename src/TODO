@@ -1,1 +1,3 @@
 connection timeout
+nonblocking DNS resolve
+worker do accept

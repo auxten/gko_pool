@@ -42,6 +42,7 @@ struct thread_worker
 };
 
 enum conn_states {
+    conn_nouse = 0,
     conn_listening,     /**< now the main schedule thread do the accept */
     conn_waiting,       /**< waiting for a readable socket */
     conn_read,          /**< reading the cmd header */
@@ -51,6 +52,14 @@ enum conn_states {
     conn_write,         /**< writing out a simple response */
     conn_mwrite,        /**< writing out many items sequentially */
     conn_closing,       /**< closing this connection */
+
+    /// for client side
+    conn_connecting = 101,
+    conn_connected,
+    conn_timeout,
+    conn_reseted,
+    conn_connect_fail,
+
     conn_max_state      /**< Max state value (used for assertion) */
 };
 
@@ -64,7 +73,7 @@ struct conn_client
     unsigned int conn_time;
     func_t handle_client;
     struct event event;
-    int state;
+    enum conn_states state;
     int ev_flags;
 
     char *read_buffer;
