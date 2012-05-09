@@ -6,6 +6,7 @@
  */
 
 #include "gko.h"
+#include "async_clnt.h"
 
 /// gingko global stuff
 s_gingko_global_t gko;
@@ -36,7 +37,10 @@ int main(int argc, char** argv)
     pthread_attr_t g_attr;
     pthread_t vnode_pthread[T_NUM];
     void *status;
+    unsigned short  proto_ver;
+    unsigned int  msg_len;
 
+    /*
     if (pthread_attr_init(&g_attr) != 0)
     {
         gko_log(FATAL, FLF("pthread_mutex_destroy error"));
@@ -70,6 +74,16 @@ int main(int argc, char** argv)
             return -1;
         }
     }
+    */
+    char buf[20] = {'\0'};
+    fill_cmd_head(buf, INT32_MAX);
+    parse_cmd_head(buf, &proto_ver, &msg_len);
+    gko_log(DEBUG, "%s %d", buf, msg_len);
+    std::vector<struct conn_client> conn_vec;
+    std::vector<s_host_t> srv_vec(1000, server);
+    connect_hosts(srv_vec, &conn_vec);
+    sleep(10);
+    disconnect_hosts(conn_vec);
     return 0;
 }
 

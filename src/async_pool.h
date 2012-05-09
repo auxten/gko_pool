@@ -59,6 +59,7 @@ enum conn_states {
     conn_timeout,
     conn_reseted,
     conn_connect_fail,
+    conn_closed,
 
     conn_max_state      /**< Max state value (used for assertion) */
 };
@@ -68,7 +69,7 @@ struct conn_client
 {
     int id;
     int client_fd;
-    unsigned long client_addr;
+    in_addr_t client_addr;
     int client_port;
     unsigned int conn_time;
     func_t handle_client;

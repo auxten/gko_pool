@@ -600,6 +600,12 @@ void gko_pool::state_machine(conn_client *c)
                 assert(false);
                 break;
 
+            default:
+                gko_log(DEBUG, "state: %d", c->state);
+                assert(false);
+                break;
+
+
         }
     }
 

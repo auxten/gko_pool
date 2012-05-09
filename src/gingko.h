@@ -58,7 +58,7 @@
 #define                 HASH_BYTE_NUM_ONCE      8
 #define                 CMD_PREFIX_BYTE         16
 #if CMD_PREFIX_BYTE == 16
-#define                 PREFIX_CMD              "                "
+#define                 PREFIX_CMD              "0000000000000000"
 #endif
 
 /// cmd keyword len
@@ -74,7 +74,7 @@ static GKO_CONST_STR    GKO_VERSION =           _GKO_VERSION;
 static GKO_CONST_STR    GKO_VERSION =           "unknown";
 #endif
 /// protocol version
-static const short      PROTO_VER   =           0;
+static const short      PROTO_VER   =           '0';
 /// root uid
 static const uid_t      ROOT =                  0;
 /// block size in bytes
@@ -739,17 +739,26 @@ static inline int gsendfile(int out_fd, int in_fd, off_t *offset,
  * @author auxten  <auxtenwpc@gmail.com>
  * @date Jan 10, 2012
  **/
-static inline void fill_cmd_head(char * cmd, const int msg_len)
+static inline void fill_cmd_head(char * cmd, int msg_len)
 {
-    memset(cmd, 0, CMD_PREFIX_BYTE);
-    *((unsigned short *) cmd) = PROTO_VER;
-    *((int *) (cmd + CMD_PREFIX_BYTE - sizeof(int))) =
-        (int) (msg_len - CMD_PREFIX_BYTE);
+    memset(cmd, '0', CMD_PREFIX_BYTE);
+
+    char * p = cmd + CMD_PREFIX_BYTE - 1;
+    while (msg_len > 0)
+    {
+        *(p--) = (char)(msg_len % 10) + '0';
+        msg_len /= 10;
+    }
 }
 
 static inline void parse_cmd_head(const char * cmd, unsigned short * proto_ver, unsigned int * msg_len)
 {
-    *proto_ver = *((unsigned short *) cmd);
-    *msg_len = *((int *) (cmd + CMD_PREFIX_BYTE - sizeof(int))) + CMD_PREFIX_BYTE;
+    *proto_ver = 0;
+    *msg_len = 0;
+    const char * p = cmd + 1; /// leave 1 byte for proto_ver
+    while (p - cmd < CMD_PREFIX_BYTE)
+    {
+        *msg_len = (*msg_len) * 10 + *(p++) - '0';
+    }
 }
 #endif /** GINGKO_H_ **/
