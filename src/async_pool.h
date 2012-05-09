@@ -172,6 +172,24 @@ private:
     /// Parse the request return the proper func handle num
     static int parse_req(char *req);
 
+
+    /**
+     * @brief non-blocking version connect
+     *
+     * @see
+     * @note
+     * @author auxten <auxtenwpc@gmail.com>
+     * @date Apr 22, 2012
+     **/
+    static int nb_connect(const s_host_t * h, struct conn_client* conn);
+
+    static int connect_hosts(const std::vector<s_host_t> & host_vec,
+            std::vector<struct conn_client> * conn_vec);
+
+    static int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
+
+    static int fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec);
+
     int thread_worker_new(int id);
     int thread_list_find_next(void);
     int conn_client_list_init(void);

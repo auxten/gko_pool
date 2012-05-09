@@ -31,7 +31,7 @@
  * @author auxten <auxtenwpc@gmail.com>
  * @date Apr 22, 2012
  **/
-int nb_connect(const s_host_t * h, struct conn_client* conn)
+int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
 {
     int sock = -1;
     int ret = -1;
@@ -88,7 +88,7 @@ int nb_connect(const s_host_t * h, struct conn_client* conn)
     return ret;
 }
 
-int connect_hosts(const std::vector<s_host_t> & host_vec,
+int gko_pool::connect_hosts(const std::vector<s_host_t> & host_vec,
         std::vector<struct conn_client> * conn_vec)
 {
     int conn_ok = 0;
@@ -133,7 +133,7 @@ int connect_hosts(const std::vector<s_host_t> & host_vec,
     return 0;
 }
 
-int disconnect_hosts(std::vector<struct conn_client> & conn_vec)
+int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
 {
     for (std::vector<struct conn_client>::iterator it = conn_vec.begin();
             it != conn_vec.end();
@@ -151,8 +151,13 @@ int disconnect_hosts(std::vector<struct conn_client> & conn_vec)
     return 0;
 }
 
-int fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec)
+int gko_pool::fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec)
 {
+    for (std::vector<struct conn_client>::iterator it = conn_vec->begin();
+            it != conn_vec->end();
+            it++)
+    {
 
+    }
     return 0;
 }

@@ -6,7 +6,6 @@
  */
 
 #include "gko.h"
-#include "async_clnt.h"
 
 /// gingko global stuff
 s_gingko_global_t gko;
