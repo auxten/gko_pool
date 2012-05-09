@@ -2,13 +2,14 @@
 
 #/bin/sh
 
+VER='4.11'
 #specify where to install by PREFIX or COMMAND-LINE ARG1
-PREFIX="$PWD/libev-4.04fixed"
+PREFIX="$PWD/libev-${VER}fixed"
 if [ -n "$1" ]; then
         PREFIX=$1
 fi
-SRCDIR=libev-4.04
-LIBNAME="libev-4.04"
+SRCDIR=libev-${VER}
+LIBNAME="libev-${VER}"
 if [ -d "$SRCDIR" ]; then
         rm -rf $SRCDIR
 fi
@@ -23,9 +24,9 @@ if [ ! -d "$SRCDIR" ]; then
         exit 1
 fi
 
-cp libev_auxten.patch $SRCDIR/libev_auxten.patch
+#cp libev_auxten.patch $SRCDIR/libev_auxten.patch
 cd $SRCDIR
-patch -p1 < libev_auxten.patch
+#patch -p1 < libev_auxten.patch
 
 ./configure --prefix=$PREFIX --enable-shared=no  --enable-static
 
@@ -33,7 +34,7 @@ make; make install
 cd ..
 
 rm -rf libev
-ln -s libev-4.04fixed libev
+ln -s libev-${VER}fixed libev
 #rm -rf $SRCDIR
 
 echo "done!"
