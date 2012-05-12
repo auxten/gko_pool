@@ -193,8 +193,6 @@ private:
     int thread_worker_new(int id);
     int thread_list_find_next(void);
     int conn_client_list_init(void);
-    int gingko_serv_async_server_base_init(void);
-    int gingko_clnt_async_server_base_init(s_host_t * the_host);
     int gko_async_server_base_init(void);
     /// Accept new connection, start listen etc.
     int conn_tcp_server(struct conn_server *c);

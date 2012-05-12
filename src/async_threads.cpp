@@ -99,6 +99,7 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     struct conn_client *client =
         gko_pool::getInstance()->conn_client_list_get(c_id);
 
+    client->state = conn_waiting;
     /// todo calloc every connection comes?
     client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
     client->rbuf_size = RBUF_SZ;
@@ -447,7 +448,7 @@ void gko_pool::state_machine(conn_client *c)
     enum aread_result res;
     enum awrite_result ret;
     unsigned short proto_ver;
-    unsigned int msg_len = 0;
+    int msg_len = 0;
 
     assert(c != NULL);
 

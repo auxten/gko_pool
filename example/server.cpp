@@ -27,6 +27,7 @@ s_gingko_global_t gko;
  * @date 2011-8-1
  **/
 GKO_STATIC_FUNC void * test_s(void *, int);
+GKO_STATIC_FUNC void * scmd_s(void *, int);
 GKO_STATIC_FUNC void * g_none_s(void *, int);
 
 /**
@@ -38,11 +39,11 @@ GKO_STATIC_FUNC void * g_none_s(void *, int);
  * @date 2011-8-1
  **/
 static char g_cmd_list[][CMD_LEN] =
-        {
-                {
-                    "TEST" },
-                {
-                    "NONE" } };
+    {
+        { "TEST" },
+        { "SCMD" },
+        { "NONE" }
+    };
 /**
  * @brief server func list
  *
@@ -52,15 +53,29 @@ static char g_cmd_list[][CMD_LEN] =
  * @date 2011-8-1
  **/
 static func_t g_func_list_s[] =
-        {
-            test_s,
-            g_none_s };
+    {
+        test_s,
+        scmd_s,
+        g_none_s
+    };
 
 GKO_STATIC_FUNC void * test_s(void *p, int)
 {
     gko_log(NOTICE, "test");
     conn_client * c = (conn_client *) p;
     c->need_write = snprintf(c->write_buffer, c->wbuf_size, "server test OK");
+    return (void *) 0;
+}
+
+GKO_STATIC_FUNC void * scmd_s(void *p, int)
+{
+    gko_log(DEBUG, "SCMD");
+
+    /// todo write MySQL
+
+    ///connect add add fd to pool
+    conn_client * c = (conn_client *) p;
+    c->need_write = snprintf(c->write_buffer, c->wbuf_size, "SCMD OK");
     return (void *) 0;
 }
 

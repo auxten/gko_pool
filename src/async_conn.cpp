@@ -242,7 +242,6 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
         return;
     }
 
-    client->state = conn_waiting;
     /// set blocking
     ///fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)& ~O_NONBLOCK);
 

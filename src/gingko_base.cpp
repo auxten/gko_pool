@@ -845,40 +845,23 @@ int readcmd(int fd, void* data, int max_len, int timeout)
     unsigned short proto_ver;
     int msg_len;
     int ret;
-    char nouse_buf[CMD_PREFIX_BYTE];
+    char head_buf[CMD_PREFIX_BYTE];
 
-    /// read the proto ver
-    if (readall(fd, &proto_ver, sizeof(proto_ver), timeout) < 0)
+    /// read the header
+    if (readall(fd, head_buf, CMD_PREFIX_BYTE, timeout) < 0)
     {
-        gko_log(WARNING, "read proto_ver failed");
-        return -1;
-    }
-    if (proto_ver != PROTO_VER)
-    {
-        gko_log(WARNING, "unsupported proto_ver");
-        return -1;
-    }
-
-    /// read the nouse_buf
-    if (readall(fd, nouse_buf,
-            CMD_PREFIX_BYTE - sizeof(proto_ver) - sizeof(msg_len), timeout) < 0)
-    {
-        gko_log(WARNING, "read nouse_buf failed");
+        gko_log(WARNING, "read head_buf failed");
         return -1;
     }
 
     /// read the msg_len
-    if (readall(fd, &msg_len, sizeof(msg_len), timeout) < 0)
-    {
-        gko_log(WARNING, "read msg_len failed");
-        return -1;
-    }
+    parse_cmd_head(head_buf, NULL, &msg_len);
     if (msg_len > max_len)
     {
         gko_log(WARNING, "a too long msg: %u", msg_len);
         return -1;
     }
-    ret = readall(fd, data, msg_len, timeout);
+    ret = readall(fd, data, msg_len - CMD_PREFIX_BYTE, timeout);
     if (ret < 0)
     {
         gko_log(WARNING, "read cmd failed");

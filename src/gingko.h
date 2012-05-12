@@ -717,7 +717,7 @@ static inline int gsendfile(int out_fd, int in_fd, off_t *offset,
 #elif defined (__FreeBSD__)
     int ret = sendfile(in_fd, out_fd, *offset, *count, NULL, (off_t *) count, 0);
     if (ret == -1 && !ERR_RW_RETRIABLE(errno))
-    return (-1);
+        return (-1);
 
     return (*count);
 #elif defined(__linux__)
@@ -751,9 +751,10 @@ static inline void fill_cmd_head(char * cmd, int msg_len)
     }
 }
 
-static inline void parse_cmd_head(const char * cmd, unsigned short * proto_ver, unsigned int * msg_len)
+static inline void parse_cmd_head(const char * cmd, void * proto_ver, int * msg_len)
 {
-    *proto_ver = 0;
+    if (proto_ver)
+        * (unsigned short *)proto_ver = 0;
     *msg_len = 0;
     const char * p = cmd + 1; /// leave 1 byte for proto_ver
     while (p - cmd < CMD_PREFIX_BYTE)

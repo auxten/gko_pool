@@ -9,21 +9,39 @@
 
 /// gingko global stuff
 s_gingko_global_t gko;
-const int T_NUM = 100;
+const int T_NUM = 1;
+const int CMD_CNT = 1;
 
 const s_host_t server =
-{
-    "127.0.0.1",
-    2120 };
+    {
+        "127.0.0.1",
+        2120
+    };
 
 void * send_test(void *)
 {
-    char msg[MSG_LEN] = "TEST";
-    for (int i = 0; i < 100; i++)
+    char msg[MSG_LEN] =
+        "TEST\tdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    for (int i = 0; i < CMD_CNT; i++)
     {
         if (chat_with_host(&server, msg, 2, 2) < 0)
         {
-            gko_log(FATAL, "sending quit message failed");
+            gko_log(FATAL, "sending test message failed");
+        }
+    }
+//    gko_log(DEBUG, "%s", msg);
+    pthread_exit(NULL);
+}
+
+void * send_scmd(void *)
+{
+    char msg[MSG_LEN] =
+        "SCMD\tlocalhost\tdf -h";
+    for (int i = 0; i < CMD_CNT; i++)
+    {
+        if (chat_with_host(&server, msg, 2, 2) < 0)
+        {
+            gko_log(FATAL, "sending test message failed");
         }
     }
 //    gko_log(DEBUG, "%s", msg);
@@ -36,10 +54,9 @@ int main(int argc, char** argv)
     pthread_attr_t g_attr;
     pthread_t vnode_pthread[T_NUM];
     void *status;
-    unsigned short  proto_ver;
-    unsigned int  msg_len;
+    unsigned short proto_ver;
+    int msg_len;
 
-    /*
     if (pthread_attr_init(&g_attr) != 0)
     {
         gko_log(FATAL, FLF("pthread_mutex_destroy error"));
@@ -53,7 +70,7 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < T_NUM; i++)
     {
-        if (pthread_create(&vnode_pthread[i], &g_attr, send_test, NULL))
+        if (pthread_create(&vnode_pthread[i], &g_attr, send_scmd, NULL))
         {
             gko_log(FATAL, "download thread %d create error", i);
             return -1;
@@ -73,16 +90,17 @@ int main(int argc, char** argv)
             return -1;
         }
     }
-    */
-    char buf[20] = {'\0'};
-    fill_cmd_head(buf, INT32_MAX);
-    parse_cmd_head(buf, &proto_ver, &msg_len);
-    gko_log(DEBUG, "%s %d", buf, msg_len);
-    std::vector<struct conn_client> conn_vec;
-    std::vector<s_host_t> srv_vec(1000, server);
-    connect_hosts(srv_vec, &conn_vec);
-    sleep(10);
-    disconnect_hosts(conn_vec);
+
+//    char buf[20] =
+//        { '\0' };
+//    fill_cmd_head(buf, INT32_MAX);
+//    parse_cmd_head(buf, &proto_ver, &msg_len);
+//    gko_log(DEBUG, "%s %d", buf, msg_len);
+//    std::vector<struct conn_client> conn_vec;
+//    std::vector<s_host_t> srv_vec(1000, server);
+//    connect_hosts(srv_vec, &conn_vec);
+//    sleep(10);
+//    disconnect_hosts(conn_vec);
     return 0;
 }
 
