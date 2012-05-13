@@ -46,7 +46,7 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
         ret = -1;
         goto NB_CONNECT_END;
     }
-    conn->client_addr = host;
+
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (FAIL_CHECK(sock < 0))
     {
@@ -76,6 +76,11 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
         ret = HOST_DOWN_FAIL;
         goto NB_CONNECT_END;
     }
+
+    conn->client_addr = host;
+    conn->client_port = h->port;
+    conn->conn_time = time((time_t *) NULL);
+    conn->client_fd = sock;
 
     ret = sock;
 
@@ -151,13 +156,45 @@ int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
     return 0;
 }
 
-int gko_pool::fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec)
-{
-    for (std::vector<struct conn_client>::iterator it = conn_vec->begin();
-            it != conn_vec->end();
-            it++)
-    {
+//int gko_pool::fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec)
+//{
+//    for (std::vector<struct conn_client>::iterator it = conn_vec->begin();
+//            it != conn_vec->end();
+//            it++)
+//    {
+//        if (it->wbuf_size < req_len)
+//            strncpy(it->write_buffer, request, req_len);
+//    }
+//    return 0;
+//}
 
+int gko_pool::make_active_connect(const s_host_t * host, const char * cmd)
+{
+    struct conn_client * conn;
+
+    conn = add_new_conn_client(FD_BEFORE_CONNECT);
+    if (!conn)
+    {
+        ///close socket and further receives will be disallowed
+        gko_log(WARNING, "Server limited: I cannot serve more clients");
+        return -2;
     }
+
+    conn_buffer_init(conn);
+
+    /// non-blocking connect
+    int connect_ret = nb_connect(host, conn);
+    if (connect_ret < 0)
+    {
+        gko_log(NOTICE, "nb_connect ret is %d", connect_ret);
+        return connect_ret;
+    }
+
+
+    conn->need_write = snprintf(conn->write_buffer, conn->wbuf_size, "%s", cmd);
+
+    thread_worker_dispatch(conn->id);
     return 0;
 }
+
+

@@ -42,10 +42,28 @@ int gko_pool::conn_client_list_init()
     }
     memset(g_client_list, 0, option->connlimit * sizeof(struct conn_client *));
     g_total_clients = 0;
+    g_total_connect = 0;
 
     gko_log(NOTICE, "Client pool initialized as %d", option->connlimit);
 
     return option->connlimit;
+}
+
+void gko_pool::conn_buffer_init(conn_client *client)
+{
+    /// todo calloc every connection comes?
+    client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
+    client->rbuf_size = RBUF_SZ;
+    client->have_read = 0;
+    client->need_read = CMD_PREFIX_BYTE;
+
+    /// todo calloc every connection comes?
+    client->__write_buffer = (char *)calloc(WBUF_SZ + CMD_PREFIX_BYTE, sizeof(char));
+    client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
+    client->wbuf_size = WBUF_SZ;
+    client->have_write = 0;
+    client->__need_write = CMD_PREFIX_BYTE;
+    client->need_write = 0;
 }
 
 /**
@@ -255,7 +273,7 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
 
     /// Client initialize
     client->client_addr = inet_addr(inet_ntoa(client_addr.sin_addr));
-    client->client_port = client_addr.sin_port;
+    client->client_port = ntohs(client_addr.sin_port);
     client->conn_time = time((time_t *) NULL);
     gko_pool::getInstance()->thread_worker_dispatch(client->id);
 
@@ -333,7 +351,14 @@ struct conn_client * gko_pool::add_new_conn_client(int client_fd)
         tmp->id = id;
         tmp->client_fd = client_fd;
         g_client_list[id] = tmp;
-        g_total_clients++;
+        if (client_fd == FD_BEFORE_CONNECT)
+        {
+            g_total_connect++;
+        }
+        else
+        {
+            g_total_clients++;
+        }
     }
     return tmp;
 }

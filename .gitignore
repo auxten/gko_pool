@@ -4,6 +4,11 @@ example/server
 lib/libev-4.04fixed
 lib/libev
 lib/libev-4.04
+lib/libev-4.11/
+lib/libev-4.11built/
+lib/libzdb
+lib/libzdb-2.10.3/
+lib/libzdb-2.10.3built/
 svn-commit.*
 .deps/
 clnt_unittest

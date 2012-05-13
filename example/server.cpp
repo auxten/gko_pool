@@ -70,12 +70,27 @@ GKO_STATIC_FUNC void * test_s(void *p, int)
 GKO_STATIC_FUNC void * scmd_s(void *p, int)
 {
     gko_log(DEBUG, "SCMD");
+    conn_client * c = (conn_client *) p;
+
+    char * arg_array[3];
+    s_host_t h;
+
+    if (sep_arg(c->read_buffer, arg_array, 3) != 3)
+    {
+        gko_log(WARNING, "Wrong SCMD cmd: %s", c->read_buffer);
+        return (void *) -1;
+    }
+
+    strncpy(h.addr, arg_array[1], sizeof(h.addr) - 1);
+    h.addr[sizeof(h.addr) - 1] = '\0';
+    h.port = AGENT_PORT;
 
     /// todo write MySQL
 
-    ///connect add add fd to pool
-    conn_client * c = (conn_client *) p;
+    /// add fd to pool
+    gko_pool::getInstance()->make_active_connect(&h, arg_array[2]);
     c->need_write = snprintf(c->write_buffer, c->wbuf_size, "SCMD OK");
+
     return (void *) 0;
 }
 

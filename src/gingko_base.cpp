@@ -842,7 +842,6 @@ int readall(int fd, void* data, int data_len, int timeout)
  **/
 int readcmd(int fd, void* data, int max_len, int timeout)
 {
-    unsigned short proto_ver;
     int msg_len;
     int ret;
     char head_buf[CMD_PREFIX_BYTE];

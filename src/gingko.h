@@ -87,6 +87,8 @@ static const int        MAX_REQ_SERV_BLOCKS =   5;
 static const int        MAX_REQ_CLNT_BLOCKS =   300;
 /// just like ZERO :p
 static const int        SERV_PORT =             2120;
+/// agent default port
+static const int        AGENT_PORT =            3000;
 /// indicate random port
 static const int        RANDOM_PORT =           -1;
 /// tcp buffer size
@@ -131,6 +133,8 @@ static const GKO_UINT64 MIN_NOFILE =            2000;
 static const int        BIND_FAIL =             -12;
 /// connect failed return
 static const int        HOST_DOWN_FAIL =        -13;
+/// connect failed return
+static const int        FD_BEFORE_CONNECT =     -250;
 /// hello retry interval, in seconds
 static const int        HELO_RETRY_INTERVAL =   3;
 /// join retry interval, in seconds

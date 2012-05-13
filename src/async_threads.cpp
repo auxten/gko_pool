@@ -97,38 +97,48 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     int c_id;
     read(fd, &c_id, sizeof(int));
     struct conn_client *client =
-        gko_pool::getInstance()->conn_client_list_get(c_id);
+            gko_pool::getInstance()->conn_client_list_get(c_id);
 
-    client->state = conn_waiting;
-    /// todo calloc every connection comes?
-    client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
-    client->rbuf_size = RBUF_SZ;
-    client->have_read = 0;
-    client->need_read = CMD_PREFIX_BYTE;
 
-    /// todo calloc every connection comes?
-    client->__write_buffer = (char *)calloc(WBUF_SZ + CMD_PREFIX_BYTE, sizeof(char));
-    client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
-    client->wbuf_size = WBUF_SZ;
-    client->have_write = 0;
-    client->__need_write = CMD_PREFIX_BYTE;
-    client->need_write = 0;
-
-    if (client->client_fd)
+    if (client->type == coming_conn)
     {
-        event_set(&client->event, client->client_fd, EV_READ | EV_PERSIST,
-                worker_event_handler, (void *) client);
-        event_base_set(worker->ev_base, &client->event);
-        if (-1 == event_add(&client->event, 0))
+        conn_buffer_init(client);
+        client->state = conn_waiting;
+
+        if (client->client_fd)
         {
-            gko_log(WARNING, "Cannot handle client's data event");
+            event_set(&client->event, client->client_fd, EV_READ | EV_PERSIST,
+                    worker_event_handler, (void *) client);
+            event_base_set(worker->ev_base, &client->event);
+            if (-1 == event_add(&client->event, 0))
+            {
+                gko_log(WARNING, "Cannot handle client's data event");
+            }
+        }
+        else
+        {
+            gko_log(WARNING, "conn_client_list_get error");
         }
     }
-    else
+    else if (client->type == active_conn)
     {
-        gko_log(WARNING, "conn_client_list_get error");
+        client->state = conn_connecting;
+
+        if (client->client_fd)
+        {
+            event_set(&client->event, client->client_fd, EV_WRITE | EV_PERSIST,
+                    worker_event_handler, (void *) client);
+            event_base_set(worker->ev_base, &client->event);
+            if (-1 == event_add(&client->event, 0))
+            {
+                gko_log(WARNING, "Cannot handle client's data event");
+            }
+        }
+        else
+        {
+            gko_log(WARNING, "conn_client_list_get error");
+        }
     }
-    return;
 }
 
 /**
@@ -460,6 +470,10 @@ void gko_pool::state_machine(conn_client *c)
             case conn_listening:
                 gko_log(DEBUG, "state: conn_listening");
                 gko_log(WARNING, "listening state again?!");
+                break;
+
+            case conn_connecting:
+                gko_log(DEBUG, "state: conn_connecting");
                 break;
 
             case conn_waiting:

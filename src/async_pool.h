@@ -64,6 +64,11 @@ enum conn_states {
     conn_max_state      /**< Max state value (used for assertion) */
 };
 
+enum conn_type {
+    coming_conn = 0, /// this is default
+    active_conn = 1
+};
+
 /// Connection client
 struct conn_client
 {
@@ -75,6 +80,7 @@ struct conn_client
     func_t handle_client;
     struct event event;
     enum conn_states state;
+    enum conn_type type;
     int ev_flags;
 
     char *read_buffer;
@@ -145,6 +151,7 @@ private:
     struct thread_worker ** g_worker_list;
     struct event_base *g_ev_base;
     int g_total_clients;
+    int g_total_connect;
     struct conn_client **g_client_list;
     struct conn_server *g_server;
     int port;
@@ -157,6 +164,8 @@ private:
     static void * thread_worker_init(void *arg);
     /// Close conn, shutdown && close
     static void thread_worker_process(int fd, short ev, void *arg);
+    /// Connection buffer init
+    static void conn_buffer_init(conn_client *client);
     /// ReAdd the event
     static bool update_event(conn_client *c, const int new_flags);
     /// State updater
@@ -172,23 +181,14 @@ private:
     /// Parse the request return the proper func handle num
     static int parse_req(char *req);
 
-
-    /**
-     * @brief non-blocking version connect
-     *
-     * @see
-     * @note
-     * @author auxten <auxtenwpc@gmail.com>
-     * @date Apr 22, 2012
-     **/
-    static int nb_connect(const s_host_t * h, struct conn_client* conn);
-
-    static int connect_hosts(const std::vector<s_host_t> & host_vec,
+    /// non-blocking version connect
+    int nb_connect(const s_host_t * h, struct conn_client* conn);
+    int connect_hosts(const std::vector<s_host_t> & host_vec,
+     std::vector<struct conn_client> * conn_vec);
+    int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
+    int fill_request(const char * request, const int req_len,
             std::vector<struct conn_client> * conn_vec);
 
-    static int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
-
-    static int fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec);
 
     int thread_worker_new(int id);
     int thread_list_find_next(void);
@@ -232,6 +232,8 @@ public:
     /// global run func
     int gko_run();
     int gko_loopexit(int timeout);
+
+    int make_active_connect(const s_host_t * host, const char * cmd);
 
 };
 
