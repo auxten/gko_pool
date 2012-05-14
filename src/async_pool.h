@@ -233,7 +233,7 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const s_host_t * host, const char * cmd);
+    int make_active_connect(const char * host, const int port, const char * cmd);
 
 };
 

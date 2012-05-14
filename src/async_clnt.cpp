@@ -168,9 +168,14 @@ int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
 //    return 0;
 //}
 
-int gko_pool::make_active_connect(const s_host_t * host, const char * cmd)
+int gko_pool::make_active_connect(const char * host, const int port, const char * cmd)
 {
     struct conn_client * conn;
+    s_host_t h;
+
+    strncpy(h.addr, host, sizeof(h.addr) - 1);
+    h.addr[sizeof(h.addr) - 1] = '\0';
+    h.port = port;
 
     conn = add_new_conn_client(FD_BEFORE_CONNECT);
     if (!conn)
@@ -180,10 +185,11 @@ int gko_pool::make_active_connect(const s_host_t * host, const char * cmd)
         return -2;
     }
 
+    gko_log(TRACE, "conn_buffer_init");
     conn_buffer_init(conn);
 
     /// non-blocking connect
-    int connect_ret = nb_connect(host, conn);
+    int connect_ret = nb_connect(&h, conn);
     if (connect_ret < 0)
     {
         gko_log(NOTICE, "nb_connect ret is %d", connect_ret);

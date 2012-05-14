@@ -73,7 +73,6 @@ GKO_STATIC_FUNC void * scmd_s(void *p, int)
     conn_client * c = (conn_client *) p;
 
     char * arg_array[3];
-    s_host_t h;
 
     if (sep_arg(c->read_buffer, arg_array, 3) != 3)
     {
@@ -81,14 +80,11 @@ GKO_STATIC_FUNC void * scmd_s(void *p, int)
         return (void *) -1;
     }
 
-    strncpy(h.addr, arg_array[1], sizeof(h.addr) - 1);
-    h.addr[sizeof(h.addr) - 1] = '\0';
-    h.port = AGENT_PORT;
 
     /// todo write MySQL
 
     /// add fd to pool
-    gko_pool::getInstance()->make_active_connect(&h, arg_array[2]);
+    gko_pool::getInstance()->make_active_connect(arg_array[1], AGENT_PORT, arg_array[2]);
     c->need_write = snprintf(c->write_buffer, c->wbuf_size, "SCMD OK");
 
     return (void *) 0;
@@ -125,7 +121,7 @@ int main(int argc, char** argv)
     gko_pool * gingko = gko_pool::getInstance();
     gingko->setPort(2120);
     gingko->setOption(&gko.opt);
-    gingko->setFuncTable(g_cmd_list, g_func_list_s, 2);
+    gingko->setFuncTable(g_cmd_list, g_func_list_s, 3);
 
     return gingko->gko_run();
 }
