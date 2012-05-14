@@ -246,11 +246,11 @@ int check_ulimit()
         fprintf(
                 stderr,
                 "The max open files limit is %lld, you had better make it >= %lld\n",
-                lmt.rlim_max, MIN_NOFILE);
+                (GKO_UINT64)lmt.rlim_max, MIN_NOFILE);
         gko_log(
                 FATAL,
                 "The max open files limit is %lld, you had better make it >= %lld\n",
-                lmt.rlim_max, MIN_NOFILE);
+                (GKO_UINT64)lmt.rlim_max, MIN_NOFILE);
         return -1;
     }
     return 0;
