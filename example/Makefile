@@ -4,7 +4,7 @@ INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/
 all: client server
 
 server:
-	g++ server.cpp $(INCLUDE_LIB_PATH) -o server
+	g++ server.cpp -g -O0 $(INCLUDE_LIB_PATH) -o server
 	
 client:
-	g++ client.cpp $(INCLUDE_LIB_PATH) -o client
+	g++ client.cpp -g -O0 $(INCLUDE_LIB_PATH) -o client

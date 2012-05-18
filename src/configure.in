@@ -23,9 +23,11 @@ AC_MSG_RESULT([$debugit])
 if test x"$debugit" = x"yes"; then
     AC_DEFINE([GKO_DEBUG],[],[Debug Mode])
     AM_CXXFLAGS="-ggdb -Wall -O0"
+    CXXFLAGS="-ggdb -Wall -O0"
 else
     AC_DEFINE([NGKO_DEBUG],[],[No-debug Mode])
-    AM_CXXFLAGS="$AM_CXXFLAGS"
+    AM_CXXFLAGS="-ggdb -Wall -O2 -march=nocona"
+    CXXFLAGS="-ggdb -Wall -O2 -march=nocona"
 fi
 
 AC_SUBST([AM_CXXFLAGS])
@@ -46,6 +48,7 @@ AC_MSG_RESULT([$unittestit])
 if test x"$unittestit" = x"yes"; then
     AC_DEFINE([UNITTEST],[],[Unittest Mode])
     AM_CXXFLAGS="-ggdb -Wall"
+    CXXFLAGS="-ggdb -Wall"
 else
     AC_DEFINE([NUNITTEST],[],[No-unittest Mode])
     AM_CXXFLAGS="$AM_CXXFLAGS"
@@ -114,7 +117,8 @@ AC_MSG_RESULT([$o3it])
 
 if test x"$o3it" = x"yes"; then
     AC_DEFINE([O3],[],[O3 Mode])
-    AM_CXXFLAGS="-Wall -O3 -march=nocona"
+    AM_CXXFLAGS="-ggdb -Wall -O3 -march=nocona"
+    CXXFLAGS="-ggdb -Wall -O3 -march=nocona"
 else
     AC_DEFINE([NO3],[],[No-O3 Mode])
     AM_CXXFLAGS="$AM_CXXFLAGS"

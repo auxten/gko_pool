@@ -18,93 +18,41 @@
 /// gingko global stuff
 s_gingko_global_t gko;
 
-/**
- * @brief server func
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-GKO_STATIC_FUNC void * test_s(void *, int);
-GKO_STATIC_FUNC void * scmd_s(void *, int);
-GKO_STATIC_FUNC void * g_none_s(void *, int);
-
-/**
- * @brief ************** FUNC DICT **************
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-static char g_cmd_list[][CMD_LEN] =
-    {
-        { "TEST" },
-        { "SCMD" },
-        { "NONE" }
-    };
-/**
- * @brief server func list
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-static func_t g_func_list_s[] =
-    {
-        test_s,
-        scmd_s,
-        g_none_s
-    };
-
-GKO_STATIC_FUNC void * test_s(void *p, int)
-{
-    gko_log(NOTICE, "test");
-    conn_client * c = (conn_client *) p;
-    c->need_write = snprintf(c->write_buffer, c->wbuf_size, "server test OK");
-    return (void *) 0;
-}
 
 GKO_STATIC_FUNC void * scmd_s(void *p, int)
 {
-    gko_log(DEBUG, "SCMD");
+    GKOLOG(DEBUG, "SCMD");
     conn_client * c = (conn_client *) p;
 
     char * arg_array[3];
 
-    if (sep_arg(c->read_buffer, arg_array, 3) != 3)
+    GKOLOG(TRACE, "%x", c);
+    if (sep_arg(c->read_buffer + CMD_PREFIX_BYTE, arg_array, 3) != 3)
     {
-        gko_log(WARNING, "Wrong SCMD cmd: %s", c->read_buffer);
+        GKOLOG(WARNING, "Wrong SCMD cmd: %s", c->read_buffer);
         return (void *) -1;
     }
 
+    GKOLOG(TRACE, "%x", c);
 
     /// todo write MySQL
 
     /// add fd to pool
-    gko_pool::getInstance()->make_active_connect(arg_array[1], AGENT_PORT, arg_array[2]);
+    gko_pool::getInstance()->make_active_connect(arg_array[1], AGENT_PORT, 1, 1, arg_array[2]);
     c->need_write = snprintf(c->write_buffer, c->wbuf_size, "SCMD OK");
-
     return (void *) 0;
 }
 
-GKO_STATIC_FUNC void * g_none_s(void *p, int)
+void * conn_send_data(void * arg)
 {
-    gko_log(NOTICE, "none");
-    return (void *) 0;
+    struct conn_client *client = (struct conn_client *) arg;
+    char * p = ((char *) client->read_buffer) + CMD_PREFIX_BYTE;
+    GKOLOG(DEBUG, "conn_send_data %s", p);
+    scmd_s(arg, 0);
+    return NULL;
 }
 
 
-/**
- * @brief server unittest main
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-15
- **/
 int main(int argc, char** argv)
 {
     gko.opt.to_debug = 1;
@@ -116,12 +64,12 @@ int main(int argc, char** argv)
     gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;
 
-    gko_log(DEBUG, "Debug mode start, i will print tons of log :p!");
+    GKOLOG(DEBUG, "Debug mode start, i will print tons of log :p!");
 
     gko_pool * gingko = gko_pool::getInstance();
     gingko->setPort(2120);
     gingko->setOption(&gko.opt);
-    gingko->setFuncTable(g_cmd_list, g_func_list_s, 3);
+    gingko->setProcessHandler(&conn_send_data);
 
     return gingko->gko_run();
 }

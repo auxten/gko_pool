@@ -27,18 +27,28 @@
 
 #include "event.h"
 
+#include "gko_errno.h"
+
 static const int        RBUF_SZ =          (2 * 1024);
 static const int        WBUF_SZ =          (4 * 1024);
 
 /// Thread worker
-struct thread_worker
+class thread_worker
 {
+public:
     int id;
     pthread_t tid;
     struct event_base *ev_base;
     struct event ev_notify;
+    struct event ev_cleantimeout;
     int notify_recv_fd;
     int notify_send_fd;
+    std::set<int> conn_set;
+
+    /// put conn into current thread conn_set
+    void add_conn(int c_id);
+    /// del conn from current thread conn_set
+    void del_conn(int c_id);
 };
 
 enum conn_states {
@@ -73,13 +83,17 @@ enum conn_type {
 struct conn_client
 {
     int id;
+    int worker_id;
     int client_fd;
+    long task_id;
+    long sub_task_id;
     in_addr_t client_addr;
     int client_port;
-    unsigned int conn_time;
+    time_t conn_time;
     func_t handle_client;
     struct event event;
     enum conn_states state;
+    enum error_no err_no;
     enum conn_type type;
     int ev_flags;
 
@@ -114,7 +128,9 @@ struct conn_server
     int tcp_reuse;
     int tcp_nodelay;
     struct event ev_accept;
-    void (* on_data_callback)(void *);
+    //void *(* on_data_callback)(void *);
+    ProcessHandler_t on_data_callback;
+    ReportHandler_t report_conn_status;
 };
 
 enum aread_result {
@@ -138,17 +154,15 @@ class gko_pool
 {
 private:
     static gko_pool * _instance;
-    /// FUNC DICT
-    static char (* cmd_list_p)[CMD_LEN];
-    ///server func list
-    static func_t * func_list_p;
-    /// cmd type conut
-    static int cmd_count;
     /// global lock
     static pthread_mutex_t instance_lock;
+    static pthread_mutex_t conn_list_lock;
+    static pthread_mutex_t thread_list_lock;
 
     int g_curr_thread;
-    struct thread_worker ** g_worker_list;
+    int g_curr_conn;
+
+    thread_worker ** g_worker_list;
     struct event_base *g_ev_base;
     int g_total_clients;
     int g_total_connect;
@@ -156,6 +170,8 @@ private:
     struct conn_server *g_server;
     int port;
     s_option_t * option;
+    ProcessHandler_t pHandler;
+    ReportHandler_t reportHandler;
 
     static void conn_send_data(void *c);
     /// Accept new connection
@@ -172,24 +188,23 @@ private:
     static void conn_set_state(conn_client *c, enum conn_states state);
     /// Event handler for worker thread
     static void worker_event_handler(const int fd, const short which, void *arg);
+    /// Event handler for clean up timeout conn
+    static void clean_handler(const int fd, const short which, void *arg);
     /// Async read
     static enum aread_result aread(conn_client *c);
     /// Async write
     static enum awrite_result awrite(conn_client *c);
     /// The drive machine of memcached
     static void state_machine(conn_client *c);
-    /// Parse the request return the proper func handle num
-    static int parse_req(char *req);
 
     /// non-blocking version connect
     int nb_connect(const s_host_t * h, struct conn_client* conn);
     int connect_hosts(const std::vector<s_host_t> & host_vec,
      std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
-    int fill_request(const char * request, const int req_len,
-            std::vector<struct conn_client> * conn_vec);
 
 
+    int clean_conn_timeout(thread_worker *worker, time_t now);
     int thread_worker_new(int id);
     int thread_list_find_next(void);
     int conn_client_list_init(void);
@@ -219,21 +234,19 @@ public:
     static s_host_t gko_serv;
 
     static gko_pool *getInstance();
-    static void setFuncTable(char(*cmd_list)[CMD_LEN], func_t * func_list,
-            int cmdcount);
 
+    void setProcessHandler(ProcessHandler_t func_list);
+    void setReportHandler(ReportHandler_t report_func);
     int getPort() const;
     void setPort(int port);
     s_option_t *getOption() const;
     void setOption(s_option_t *option);
 
-    /// close conn, shutdown && close
-    int conn_close();
     /// global run func
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const char * cmd);
+    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd);
 
 };
 

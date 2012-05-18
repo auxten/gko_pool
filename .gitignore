@@ -1,3 +1,4 @@
+*.dSYM
 example/client
 example/log
 example/server

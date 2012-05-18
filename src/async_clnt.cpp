@@ -42,7 +42,7 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
     addr_len = getaddr_my(h->addr, &host);
     if (FAIL_CHECK(!addr_len))
     {
-        gko_log(WARNING, "gethostbyname %s error", h->addr);
+        GKOLOG(WARNING, "gethostbyname %s error", h->addr);
         ret = -1;
         goto NB_CONNECT_END;
     }
@@ -50,7 +50,7 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (FAIL_CHECK(sock < 0))
     {
-        gko_log(WARNING, "get socket error");
+        GKOLOG(WARNING, "get socket error");
         ret = -1;
         goto NB_CONNECT_END;
     }
@@ -63,7 +63,7 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
     /** set the connect non-blocking then blocking for add timeout on connect **/
     if (FAIL_CHECK(setnonblock(sock) < 0))
     {
-        gko_log(WARNING, "set socket non-blocking error");
+        GKOLOG(WARNING, "set socket non-blocking error");
         ret = -1;
         goto NB_CONNECT_END;
     }
@@ -72,14 +72,13 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
     if (FAIL_CHECK(connect(sock, (struct sockaddr *) &channel, sizeof(channel)) &&
             errno != EINPROGRESS))
     {
-        gko_log(WARNING, "connect error");
+        GKOLOG(WARNING, "connect error");
         ret = HOST_DOWN_FAIL;
         goto NB_CONNECT_END;
     }
 
     conn->client_addr = host;
     conn->client_port = h->port;
-    conn->conn_time = time((time_t *) NULL);
     conn->client_fd = sock;
 
     ret = sock;
@@ -118,12 +117,12 @@ int gko_pool::connect_hosts(const std::vector<s_host_t> & host_vec,
         nb_conn_sock = nb_connect(&(*it), &clnt);
         if (nb_conn_sock < 0)
         {
-            char ip[18] = {'\0'};
+//            char ip[18] = {'\0'};
             clnt.client_fd = -1;
             clnt.state = conn_connect_fail;
             conn_err++;
-            gko_log(DEBUG, "connect fail for %s:%d failed",
-                    inet_neta(clnt.client_addr, ip, 17), clnt.client_port);
+            GKOLOG(DEBUG, "connect fail for %d:%d failed",
+                    clnt.client_addr, clnt.client_port);
         }
         else
         {
@@ -133,7 +132,7 @@ int gko_pool::connect_hosts(const std::vector<s_host_t> & host_vec,
         }
         conn_vec->push_back(clnt);
     }
-    gko_log(DEBUG, "first stage connect ok:%d, err:%d", conn_ok, conn_err);
+    GKOLOG(DEBUG, "first stage connect ok:%d, err:%d", conn_ok, conn_err);
 
     return 0;
 }
@@ -146,10 +145,10 @@ int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
     {
         if (it->state != conn_closed)
         {
-            char ip[18] = {'\0'};
+//            char ip[18] = {'\0'};
             if (close(it->client_fd) != 0)
-                gko_log(DEBUG, "close fd failed for %s:%d",
-                        inet_neta(it->client_addr, ip, 17), it->client_port);
+                GKOLOG(DEBUG, "close fd failed for %d:%d",
+                        it->client_addr, it->client_port);
             it->state = conn_closed;
         }
     }
@@ -168,7 +167,7 @@ int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
 //    return 0;
 //}
 
-int gko_pool::make_active_connect(const char * host, const int port, const char * cmd)
+int gko_pool::make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd)
 {
     struct conn_client * conn;
     s_host_t h;
@@ -181,26 +180,31 @@ int gko_pool::make_active_connect(const char * host, const int port, const char 
     if (!conn)
     {
         ///close socket and further receives will be disallowed
-        gko_log(WARNING, "Server limited: I cannot serve more clients");
-        return -2;
+        reportHandler(task_id, sub_task_id, SERVER_INTERNAL_ERROR, "");
+        GKOLOG(WARNING, "Server limited: I cannot serve more clients");
+        return SERVER_INTERNAL_ERROR;
     }
 
-    gko_log(TRACE, "conn_buffer_init");
+    GKOLOG(DEBUG, "conn_buffer_init");
     conn_buffer_init(conn);
 
     /// non-blocking connect
     int connect_ret = nb_connect(&h, conn);
     if (connect_ret < 0)
     {
-        gko_log(NOTICE, "nb_connect ret is %d", connect_ret);
-        return connect_ret;
+        reportHandler(task_id, sub_task_id, DISPATCH_SEND_ERROR, "");
+        GKOLOG(NOTICE, "nb_connect ret is %d", connect_ret);
+        return DISPATCH_SEND_ERROR;
     }
 
 
     conn->need_write = snprintf(conn->write_buffer, conn->wbuf_size, "%s", cmd);
+    conn->type = active_conn;
+    conn->task_id = task_id;
+    conn->sub_task_id = sub_task_id;
 
     thread_worker_dispatch(conn->id);
-    return 0;
+    return SUCC;
 }
 
 

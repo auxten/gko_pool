@@ -7,7 +7,7 @@ makelib:
 	cd lib && bash -x patch_build_all.sh && cd ..
 
 compile:
-	cd src && ./configure CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' --enable-debug && make clean && \
+	cd src && ./configure CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean && \
 	cd hash && make && cd .. && make -j 4 && cd ..
 
 rm_config:

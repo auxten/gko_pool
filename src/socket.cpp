@@ -111,14 +111,14 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
     addr_len = getaddr_my(h->addr, &host);
     if (FAIL_CHECK(!addr_len))
     {
-        gko_log(WARNING, "gethostbyname %s error", h->addr);
+        GKOLOG(WARNING, "gethostbyname %s error", h->addr);
         ret = -1;
         goto CONNECT_END;
     }
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (FAIL_CHECK(sock < 0))
     {
-        gko_log(WARNING, "get socket error");
+        GKOLOG(WARNING, "get socket error");
         ret = -1;
         goto CONNECT_END;
     }
@@ -136,7 +136,7 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
     /** set the connect non-blocking then blocking for add timeout on connect **/
     if (FAIL_CHECK(setnonblock(sock) < 0))
     {
-        gko_log(WARNING, "set socket non-blocking error");
+        GKOLOG(WARNING, "set socket non-blocking error");
         ret = -1;
         goto CONNECT_END;
     }
@@ -145,7 +145,7 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
     if (FAIL_CHECK(connect(sock, (struct sockaddr *) &channel, sizeof(channel)) &&
             errno != EINPROGRESS))
     {
-        gko_log(WARNING, "connect error");
+        GKOLOG(WARNING, "connect error");
         ret = HOST_DOWN_FAIL;
         goto CONNECT_END;
     }
@@ -170,13 +170,13 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
 #endif /* HAVE_POLL */
     if (select_ret < 0)
     {
-        gko_log(WARNING, "select/poll error on connect");
+        GKOLOG(WARNING, "select/poll error on connect");
         ret = HOST_DOWN_FAIL;
         goto CONNECT_END;
     }
     if (!select_ret)
     {
-        gko_log(WARNING, "connect timeout on connect");
+        GKOLOG(WARNING, "connect timeout on connect");
         ret = HOST_DOWN_FAIL;
         goto CONNECT_END;
     }
@@ -189,16 +189,16 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
     (void) getsockopt(sock, SOL_SOCKET, SO_ERROR, &res, &res_size);
     if (CONNECT_DEST_DOWN(res))
     {
-//        gko_log(NOTICE, "connect dest is down errno: %d", res);
+//        GKOLOG(NOTICE, "connect dest is down errno: %d", res);
         ret = HOST_DOWN_FAIL;
         goto CONNECT_END;
     }
 
-    ///gko_log(WARNING, "selected %d ret %d, time %d", sock, select_ret, send_timeout.tv_sec);
+    ///GKOLOG(WARNING, "selected %d ret %d, time %d", sock, select_ret, send_timeout.tv_sec);
     /** set back blocking **/
     if (FAIL_CHECK(setblock(sock) < 0))
     {
-        gko_log(WARNING, "set socket non-blocking error");
+        GKOLOG(WARNING, "set socket non-blocking error");
         ret = -1;
         goto CONNECT_END;
     }
@@ -207,14 +207,14 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
     if (FAIL_CHECK(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &recv_timeout,
                     sizeof(struct timeval))))
     {
-        gko_log(WARNING, "setsockopt SO_RCVTIMEO error");
+        GKOLOG(WARNING, "setsockopt SO_RCVTIMEO error");
         ret = -1;
         goto CONNECT_END;
     }
     if (FAIL_CHECK(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &send_timeout,
                     sizeof(struct timeval))))
     {
-        gko_log(WARNING, "setsockopt SO_SNDTIMEO error");
+        GKOLOG(WARNING, "setsockopt SO_SNDTIMEO error");
         ret = -1;
         goto CONNECT_END;
     }
@@ -241,7 +241,7 @@ int connect_host(const s_host_t * h, const int recv_sec, const int send_sec)
 int close_socket(int sock)
 {
     ///  if (shutdown(sock, 2)) {
-    ///      gko_log(WARNING, "shutdown sock error");
+    ///      GKOLOG(WARNING, "shutdown sock error");
     ///      return -1;
     ///  }
 //    struct linger so_linger;
@@ -249,11 +249,11 @@ int close_socket(int sock)
 //    so_linger.l_linger = 0; /// at most wait for 1s
 //    if (FAIL_CHECK(setsockopt(sock, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger))))
 //    {
-//        gko_log(WARNING, "set so_linger failed");
+//        GKOLOG(WARNING, "set so_linger failed");
 //    }
     if (FAIL_CHECK(close(sock)))
     {
-        gko_log(WARNING, "close sock error");
+        GKOLOG(WARNING, "close sock error");
         return -1;
     }
     return 0;

@@ -26,10 +26,10 @@ void * send_test(void *)
     {
         if (chat_with_host(&server, msg, 2, 2) < 0)
         {
-            gko_log(FATAL, "sending test message failed");
+            GKOLOG(FATAL, "sending test message failed");
         }
     }
-//    gko_log(DEBUG, "%s", msg);
+//    GKOLOG(DEBUG, "%s", msg);
     pthread_exit(NULL);
 }
 
@@ -41,10 +41,10 @@ void * send_scmd(void *)
     {
         if (chat_with_host(&server, msg, 2, 2) < 0)
         {
-            gko_log(FATAL, "sending test message failed");
+            GKOLOG(FATAL, "sending test message failed");
         }
     }
-//    gko_log(DEBUG, "%s", msg);
+//    GKOLOG(DEBUG, "%s", msg);
     pthread_exit(NULL);
 }
 
@@ -57,14 +57,32 @@ int main(int argc, char** argv)
     unsigned short proto_ver;
     int msg_len;
 
+    //    char buf[20] =
+    //        { '\0' };
+    //    fill_cmd_head(buf, INT32_MAX);
+    //    parse_cmd_head(buf, &proto_ver, &msg_len);
+    //    GKOLOG(DEBUG, "%s %d", buf, msg_len);
+    //    std::vector<struct conn_client> conn_vec;
+    //    std::vector<s_host_t> srv_vec(1000, server);
+    //    connect_hosts(srv_vec, &conn_vec);
+    //    sleep(10);
+    //    disconnect_hosts(conn_vec);
+
+//    char * array[5] = {NULL, NULL, NULL, NULL, NULL};
+//    char t1[100] = "aa\t\t\tddd\tbbb\t\tccc\trrr\tyyy";
+//    sep_arg(t1, array, 5);
+//    GKOLOG(DEBUG, "%s, %s, %s, %s, %s", array[0], array[1], array[2], array[3], array[4]);
+//    GKOLOG(DEBUG, "for test %s %d", "ddd", 10);
+//    return 0;
+
     if (pthread_attr_init(&g_attr) != 0)
     {
-        gko_log(FATAL, FLF("pthread_mutex_destroy error"));
+        GKOLOG(FATAL, FLF("pthread_mutex_destroy error"));
         return -1;
     }
     if (pthread_attr_setdetachstate(&g_attr, PTHREAD_CREATE_JOINABLE) != 0)
     {
-        gko_log(FATAL, FLF("pthread_mutex_destroy error"));
+        GKOLOG(FATAL, FLF("pthread_mutex_destroy error"));
         return -1;
     }
 
@@ -72,7 +90,7 @@ int main(int argc, char** argv)
     {
         if (pthread_create(&vnode_pthread[i], &g_attr, send_scmd, NULL))
         {
-            gko_log(FATAL, "download thread %d create error", i);
+            GKOLOG(FATAL, "download thread %d create error", i);
             return -1;
         }
     }
@@ -80,27 +98,17 @@ int main(int argc, char** argv)
     {
         if (pthread_join(vnode_pthread[i], &status))
         {
-            gko_log(FATAL, "download thread %d join error", i);
+            GKOLOG(FATAL, "download thread %d join error", i);
             return -1;
         }
         if (status != (void *) 0)
         {
-            gko_log(FATAL, "thread %d joined with error num %lld", i,
+            GKOLOG(FATAL, "thread %d joined with error num %lld", i,
                     (long long) status);
             return -1;
         }
     }
 
-//    char buf[20] =
-//        { '\0' };
-//    fill_cmd_head(buf, INT32_MAX);
-//    parse_cmd_head(buf, &proto_ver, &msg_len);
-//    gko_log(DEBUG, "%s %d", buf, msg_len);
-//    std::vector<struct conn_client> conn_vec;
-//    std::vector<s_host_t> srv_vec(1000, server);
-//    connect_hosts(srv_vec, &conn_vec);
-//    sleep(10);
-//    disconnect_hosts(conn_vec);
     return 0;
 }
 

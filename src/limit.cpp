@@ -98,7 +98,7 @@ void bw_down_limit(int amount, int limit_rate)
         }
 
         TIMEVAL_TO_TIMESPEC(&bw_down_end, &ts);
-        ///gko_log(WARNING, "sleep for: %d usec", (&bw_down_end)->tv_usec);
+        ///GKOLOG(WARNING, "sleep for: %d usec", (&bw_down_end)->tv_usec);
         while (nanosleep(&ts, &rm) == -1)
         {
             if (errno != EINTR)
@@ -188,7 +188,7 @@ void bw_up_limit(int amount, int limit_rate)
         }
 
         TIMEVAL_TO_TIMESPEC(&bw_up_end, &ts);
-        ///gko_log(WARNING, "sleep for: %d usec", (&bw_up_end)->tv_usec);
+        ///GKOLOG(WARNING, "sleep for: %d usec", (&bw_up_end)->tv_usec);
         while (nanosleep(&ts, &rm) == -1)
         {
             if (errno != EINTR)
@@ -278,7 +278,7 @@ void disk_w_limit(int amount, int limit_rate)
         }
 
         TIMEVAL_TO_TIMESPEC(&disk_w_end, &ts);
-        ///gko_log(WARNING, "sleep for: %d usec", (&disk_w_end)->tv_usec);
+        ///GKOLOG(WARNING, "sleep for: %d usec", (&disk_w_end)->tv_usec);
         while (nanosleep(&ts, &rm) == -1)
         {
             if (errno != EINTR)
@@ -368,7 +368,7 @@ void disk_r_limit(int amount, int limit_rate)
         }
 
         TIMEVAL_TO_TIMESPEC(&disk_r_end, &ts);
-        ///gko_log(WARNING, "sleep for: %d usec", (&disk_r_end)->tv_usec);
+        ///GKOLOG(WARNING, "sleep for: %d usec", (&disk_r_end)->tv_usec);
         while (nanosleep(&ts, &rm) == -1)
         {
             if (errno != EINTR)
@@ -458,7 +458,7 @@ void mk_seed_limit(int amount, int limit_rate)
         }
 
         TIMEVAL_TO_TIMESPEC(&mk_seed_end, &ts);
-        ///gko_log(WARNING, "sleep for: %d usec", (&mk_seed_end)->tv_usec);
+        ///GKOLOG(WARNING, "sleep for: %d usec", (&mk_seed_end)->tv_usec);
         while (nanosleep(&ts, &rm) == -1)
         {
             if (errno != EINTR)

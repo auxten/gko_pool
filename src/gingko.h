@@ -45,6 +45,7 @@
 #endif /** __APPLE__ **/
 
 #include "event.h"
+#include "hermes_errno.h"
 
 
 #ifndef GINGKO_H_
@@ -56,9 +57,9 @@
 #define                 _FILE_OFFSET_BITS       64
 /// only 8 or 4 here
 #define                 HASH_BYTE_NUM_ONCE      8
-#define                 CMD_PREFIX_BYTE         16
-#if CMD_PREFIX_BYTE == 16
-#define                 PREFIX_CMD              "0000000000000000"
+#define                 CMD_PREFIX_BYTE         10
+#if CMD_PREFIX_BYTE == 10
+#define                 PREFIX_CMD              "0000000000"
 #endif
 
 /// cmd keyword len
@@ -147,12 +148,8 @@ static const int        CK_SIG_INTERVAL =       200000;
 static const int        MAX_LONG_INT =          19;
 /// default at MacOS is 512k
 static const int        MYSTACKSIZE =           (10 * 1024 * 1024);
-/// default client conn limit
-static const int        CLNT_POOL_SIZE =        20;
-/// default client thread num
-static const int        CLNT_ASYNC_THREAD_NUM = 3;
 /// default server conn limit
-static const int        SERV_POOL_SIZE =        30000;
+static const int        SERV_POOL_SIZE =        100000;
 /// default client thread num
 static const int        SERV_ASYNC_THREAD_NUM = 16;
 /// default xor hash thread num
@@ -163,27 +160,11 @@ static const int        FIRST_HOST_COUNT =      3;
 static const int        SECOND_HOST_COUNT =     3;
 
 /// in seconds
+static const int        NET_TIMEOUT =           60;
+/// in seconds
 static const int        RCV_TIMEOUT =           30;
 /// in seconds
-static const int        SND_TIMEOUT =           30;
-/// in seconds
-static const int        RCVHI_TIMEOUT =         300;
-/// in seconds
-static const int        RCVJOB_TIMEOUT =        1000;
-/// in seconds
-static const int        RCVHAVE_TIMEOUT =       30;
-/// in seconds
-static const int        RCVSERV_HAVE_TIMEOUT =  1000;
-/// in seconds
-static const int        SNDSERV_HAVE_TIMEOUT =  120;
-/// in seconds
-static const int        SNDHELO_TIMEOUT =       30;
-/// in seconds
-static const int        RCVBLK_TIMEOUT =        30;
-/// in seconds
-static const int        SNDBLK_TIMEOUT =        30;
-/// in seconds
-static const int        RCVPROGRESS_TIMEOUT =   120;
+static const int        SND_TIMEOUT =           60;
 
 /// sleep time before free the job related mem
 static const int        ERASE_JOB_MEM_WAIT =    (SND_TIMEOUT + 5);
@@ -241,7 +222,8 @@ static GKO_CONST_STR     GKO_SNAP_FILE =        "._gk_snapshot_";
 /// for debug usage
 static GKO_CONST_STR     SERVER_IP =            "127.0.0.1";
 /// for log
-static GKO_CONST_STR     TIME_FORMAT =          "[%Y-%m-%d %H:%M:%S] ";
+//static GKO_CONST_STR     TIME_FORMAT =          "[%Y-%m-%d %H:%M:%S]";
+static GKO_CONST_STR     TIME_FORMAT =          "[%m-%d %H:%M:%S]";
 /// for old log path
 static GKO_CONST_STR     OLD_LOG_TIME =         ".%Y%m%d%H%M%S";
 
@@ -324,7 +306,7 @@ static bool operator ==(const s_host_t& lhost, const s_host_t& rhost) {\
 #define ASSERT(cond)                     \
     do {                                \
         if (UNLIKELY(!(cond))) {             \
-            gko_log(FATAL, "Assertion: (%s) failed, %s() in %s:%d :",     \
+            GKOLOG(FATAL, "Assertion: (%s) failed, %s() in %s:%d :",     \
                  #cond,__func__,__FILE__,__LINE__);      \
             /** In case a user-supplied handler tries to **/  \
             /** return control to us, log and abort here. **/ \
@@ -338,7 +320,7 @@ static bool operator ==(const s_host_t& lhost, const s_host_t& rhost) {\
 #define LOG_IF_NOT(cond)                     \
     do {                                \
         if (UNLIKELY(!(cond))) {             \
-            gko_log(WARNING, "Assertion: (%s) failed, %s() in %s:%d : ",     \
+            GKOLOG(WARNING, "Assertion: (%s) failed, %s() in %s:%d : ",     \
                  #cond,__func__,__FILE__,__LINE__);      \
             /** In case a user-supplied handler tries to **/  \
             /** return control to us, log and abort here. **/ \
@@ -354,6 +336,8 @@ static bool operator ==(const s_host_t& lhost, const s_host_t& rhost) {\
 
 typedef struct _s_job_t s_job_t;
 typedef void * (*func_t)(void *, int);
+typedef void * (*ProcessHandler_t)(void *);
+typedef void (*ReportHandler_t)(int, int, int, const char *);
 
 /// file structure
 typedef struct _s_file_t
@@ -562,6 +546,9 @@ void abort_handler(const int sig);
 void set_sig(void(*int_handler)(int));
 /// start a thread to watch the gko.sig_flag and take action
 int sig_watcher(void * (*worker)(void *));
+void int_handler(const int sig);
+void * int_worker(void * a);
+
 /// send a mem to fd(usually socket)
 int sendall(int, const void *, int sz, int flag);
 /// send a mem to fd(usually socket)
@@ -587,8 +574,6 @@ int sendblocks(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num);
 int sendblocks_zip(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num);
 /// write block to disk
 int writeblock(s_job_t * jo, const u_char * buf, s_block_t * blk);
-/// Before send data all req to server will filtered by conn_send_data
-void conn_send_data(int fd, void *str, unsigned int len);
 /// send cmd msg to host, not read response, on succ return 0
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// send cmd msg to host, read response, on succ return 0
@@ -599,8 +584,6 @@ int readfileall(int fd, off_t offset, off_t count, char ** buf);
 int readall(int socket, void* data, int data_len, int flags);
 /// try best to read cmd, the first 2 bytes are cmd length
 int readcmd(int fd, void* data, int max_len, int timeout);
-/// read zipped data form fd and unzip it
-int readall_unzip(int fd, char * data, char * buf_zip, int data_len, int timeout);
 /// update host_set_max_size
 void update_host_max(s_job_t * job);
 

@@ -2763,11 +2763,13 @@ if test x"$debugit" = x"yes"; then
 $as_echo "#define GKO_DEBUG /**/" >>confdefs.h
 
     AM_CXXFLAGS="-ggdb -Wall -O0"
+    CXXFLAGS="-ggdb -Wall -O0"
 else
 
 $as_echo "#define NGKO_DEBUG /**/" >>confdefs.h
 
-    AM_CXXFLAGS="$AM_CXXFLAGS"
+    AM_CXXFLAGS="-ggdb -Wall -O2 -march=nocona"
+    CXXFLAGS="-ggdb -Wall -O2 -march=nocona"
 fi
 
 
@@ -2794,6 +2796,7 @@ if test x"$unittestit" = x"yes"; then
 $as_echo "#define UNITTEST /**/" >>confdefs.h
 
     AM_CXXFLAGS="-ggdb -Wall"
+    CXXFLAGS="-ggdb -Wall"
 else
 
 $as_echo "#define NUNITTEST /**/" >>confdefs.h
@@ -2886,7 +2889,8 @@ if test x"$o3it" = x"yes"; then
 
 $as_echo "#define O3 /**/" >>confdefs.h
 
-    AM_CXXFLAGS="-Wall -O3 -march=nocona"
+    AM_CXXFLAGS="-ggdb -Wall -O3 -march=nocona"
+    CXXFLAGS="-ggdb -Wall -O3 -march=nocona"
 else
 
 $as_echo "#define NO3 /**/" >>confdefs.h
