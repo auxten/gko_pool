@@ -337,7 +337,7 @@ static bool operator ==(const s_host_t& lhost, const s_host_t& rhost) {\
 typedef struct _s_job_t s_job_t;
 typedef void * (*func_t)(void *, int);
 typedef void * (*ProcessHandler_t)(void *);
-typedef void (*ReportHandler_t)(int, int, int, const char *);
+typedef void (*ReportHandler_t)(void *, const char *);
 
 /// file structure
 typedef struct _s_file_t

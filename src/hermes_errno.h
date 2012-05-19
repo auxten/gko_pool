@@ -11,6 +11,7 @@
 enum error_no {
 //////////////////// DO NOT USE DIRECTLY below //////////////////////
     /// succ or fail
+    INVILID                 = -1,
     SUCC                    = 0,
     FAIL                    = 1,
 

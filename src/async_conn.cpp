@@ -451,7 +451,9 @@ gko_pool::gko_pool(const int pt)
     :
         g_curr_thread(0),
         g_curr_conn(0),
-        port(pt)
+        port(pt),
+        pHandler(NULL),
+        reportHandler(NULL)
 {
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
@@ -463,7 +465,9 @@ gko_pool::gko_pool(const int pt)
 gko_pool::gko_pool()
     :
         g_curr_thread(0),
-        g_curr_conn(0)
+        g_curr_conn(0),
+        pHandler(NULL),
+        reportHandler(NULL)
 {
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)

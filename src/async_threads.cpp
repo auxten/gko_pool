@@ -130,14 +130,18 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                 if (conn->state == conn_read)
                 {
                     GKOLOG(NOTICE, "read active conn timeout, clean up");
-                    reportHandler(conn->task_id, conn->sub_task_id, DISPATCH_RECV_TIMEOUT, "");
+                    conn->err_no = DISPATCH_RECV_TIMEOUT;
+                    if (reportHandler)
+                        reportHandler(conn, "");
                     (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write || conn->state == conn_connecting)
                 {
                     GKOLOG(NOTICE, "write active conn timeout, clean up");
-                    reportHandler(conn->task_id, conn->sub_task_id, DISPATCH_SEND_TIMEOUT, "");
+                    conn->err_no = DISPATCH_SEND_TIMEOUT;
+                    if (reportHandler)
+                        reportHandler(conn, "");
                     (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
                     Pool->conn_client_free(conn);
                 }
@@ -386,7 +390,8 @@ void gko_pool::conn_set_state(conn_client *c, enum conn_states state)
             c->task_id > 0 &&
             c->sub_task_id > 0)
         {
-            gko_pool::getInstance()->reportHandler(c->task_id, c->sub_task_id, c->err_no, "");
+            if (gko_pool::getInstance()->reportHandler)
+                gko_pool::getInstance()->reportHandler(c, "");
         }
     }
 }
@@ -657,7 +662,11 @@ void gko_pool::state_machine(conn_client *c)
                 }
                 else if (c->type == active_conn)
                 {
-                    Pool->reportHandler(c->task_id, c->sub_task_id, -1, c->read_buffer + CMD_PREFIX_BYTE);
+                    c->err_no = INVILID;
+                    if (Pool->reportHandler)
+                    {
+                        Pool->reportHandler(c, c->read_buffer + CMD_PREFIX_BYTE);
+                    }
                     conn_set_state(c, conn_closing);
                 }
 

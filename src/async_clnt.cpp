@@ -180,28 +180,29 @@ int gko_pool::make_active_connect(const char * host, const int port, const long 
     if (!conn)
     {
         ///close socket and further receives will be disallowed
-        reportHandler(task_id, sub_task_id, SERVER_INTERNAL_ERROR, "");
-        GKOLOG(WARNING, "Server limited: I cannot serve more clients");
+        GKOLOG(FATAL, "Server limited: I cannot serve more clients");
         return SERVER_INTERNAL_ERROR;
     }
 
     GKOLOG(DEBUG, "conn_buffer_init");
     conn_buffer_init(conn);
 
-    /// non-blocking connect
-    int connect_ret = nb_connect(&h, conn);
-    if (connect_ret < 0)
-    {
-        reportHandler(task_id, sub_task_id, DISPATCH_SEND_ERROR, "");
-        GKOLOG(NOTICE, "nb_connect ret is %d", connect_ret);
-        return DISPATCH_SEND_ERROR;
-    }
-
-
     conn->need_write = snprintf(conn->write_buffer, conn->wbuf_size, "%s", cmd);
     conn->type = active_conn;
     conn->task_id = task_id;
     conn->sub_task_id = sub_task_id;
+
+    /// non-blocking connect
+    int connect_ret = nb_connect(&h, conn);
+    if (connect_ret < 0)
+    {
+        conn->err_no = DISPATCH_SEND_ERROR;
+        if (reportHandler)
+            reportHandler(conn, "");
+        GKOLOG(NOTICE, "nb_connect ret is %d", connect_ret);
+        return DISPATCH_SEND_ERROR;
+    }
+
 
     thread_worker_dispatch(conn->id);
     return SUCC;
