@@ -130,7 +130,6 @@ struct conn_server
     struct event ev_accept;
     //void *(* on_data_callback)(void *);
     ProcessHandler_t on_data_callback;
-    ReportHandler_t report_conn_status;
 };
 
 enum aread_result {

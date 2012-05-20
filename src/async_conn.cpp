@@ -53,12 +53,8 @@ int gko_pool::conn_client_list_init()
 int gko_pool::gko_async_server_base_init()
 {
     g_server = new conn_server;
-    if(! g_server)
-    {
-        GKOLOG(FATAL, "new for g_server failed");
-        return -1;
-    }
     memset(g_server, 0, sizeof(struct conn_server));
+
     g_server->srv_addr = option->bind_ip;
     if (this->port < 0)
     {
@@ -451,6 +447,7 @@ gko_pool::gko_pool(const int pt)
     :
         g_curr_thread(0),
         g_curr_conn(0),
+        g_server(NULL),
         port(pt),
         pHandler(NULL),
         reportHandler(NULL)
@@ -466,6 +463,8 @@ gko_pool::gko_pool()
     :
         g_curr_thread(0),
         g_curr_conn(0),
+        g_server(NULL),
+        port(-1),
         pHandler(NULL),
         reportHandler(NULL)
 {
@@ -522,7 +521,7 @@ gko_pool *gko_pool::getInstance()
 int gko_pool::gko_run()
 {
 
-    if (gko_async_server_base_init() < 0)
+    if (port >= 0 && gko_async_server_base_init() < 0)
     {
         GKOLOG(FATAL, "gko_async_server_base_init failed");
         return -2;

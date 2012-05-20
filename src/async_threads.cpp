@@ -645,7 +645,7 @@ void gko_pool::state_machine(conn_client *c)
 
                 if (c->type == coming_conn)
                 {
-                    if (Pool->g_server->on_data_callback)
+                    if (Pool->g_server && Pool->g_server->on_data_callback)
                     {
                         Pool->g_server->on_data_callback((void *) c);
                     }
