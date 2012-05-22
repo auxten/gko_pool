@@ -68,11 +68,12 @@ int gko_pool::nb_connect(const s_host_t * h, struct conn_client* conn)
     }
 
     GKOLOG(DEBUG, "before connect");
+    char ip[16];
     /** connect and send the msg **/
     if (FAIL_CHECK(connect(sock, (struct sockaddr *) &channel, sizeof(channel)) &&
             errno != EINPROGRESS))
     {
-        GKOLOG(WARNING, "connect error");
+        GKOLOG(WARNING, "connect error %s:%d", addr_itoa(host, ip), h->port);
     }
     GKOLOG(DEBUG, "after connect");
 
@@ -110,6 +111,7 @@ int gko_pool::connect_hosts(const std::vector<s_host_t> & host_vec,
     {
         int nb_conn_sock;
         struct conn_client clnt;
+        char ip[16];
 
         /// connect and set in_addr_t to clnt->client_addr
         nb_conn_sock = nb_connect(&(*it), &clnt);
@@ -119,8 +121,8 @@ int gko_pool::connect_hosts(const std::vector<s_host_t> & host_vec,
             clnt.client_fd = -1;
             clnt.state = conn_connect_fail;
             conn_err++;
-            GKOLOG(DEBUG, "connect fail for %d:%d failed",
-                    clnt.client_addr, clnt.client_port);
+            GKOLOG(DEBUG, "connect fail for %s:%d failed",
+                    addr_itoa(clnt.client_addr, ip), clnt.client_port);
         }
         else
         {
@@ -143,13 +145,14 @@ int gko_pool::disconnect_hosts(std::vector<struct conn_client> & conn_vec)
     {
         if (it->state != conn_closed)
         {
-//            char ip[18] = {'\0'};
+            char ip[16];
             if (close(it->client_fd) != 0)
-                GKOLOG(DEBUG, "close fd failed for %d:%d",
-                        it->client_addr, it->client_port);
+                GKOLOG(DEBUG, "close fd failed for %s:%d",
+                        addr_itoa(it->client_addr, ip), it->client_port);
             it->state = conn_closed;
         }
     }
+
     return 0;
 }
 

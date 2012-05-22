@@ -8,6 +8,7 @@
  **/
 
 #include "gingko.h"
+#include "socket.h"
 #include "async_pool.h"
 #include "log.h"
 
@@ -553,6 +554,7 @@ void gko_pool::state_machine(conn_client *c)
     enum awrite_result ret;
     unsigned short proto_ver;
     int msg_len = 0;
+    char ip[16];
 
     assert(c != NULL);
     gko_pool * Pool = gko_pool::getInstance();
@@ -714,13 +716,13 @@ void gko_pool::state_machine(conn_client *c)
                     case WRITE_SENT_MORE:
                         break;
                     case WRITE_NO_DATA_SENT:
-                        GKOLOG(FATAL, FLF("write no data sent"));
+                        GKOLOG(FATAL, "write no data sent");
                         c->err_no = SERVER_INTERNAL_ERROR;
                         conn_set_state(c, conn_closing);
                         break;
 
                     case WRITE_ERROR:
-                        GKOLOG(WARNING, FLF("write to socket error"));
+                        GKOLOG(WARNING, "write to socket error, closing");
                         if (c->type == active_conn)
                         {
                             c->err_no = DISPATCH_SEND_ERROR;
@@ -736,7 +738,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_closing:
-                GKOLOG(DEBUG, "state: conn_closing");
+                GKOLOG(DEBUG, "state: conn_closing %s:%d", addr_itoa(c->client_addr, ip), c->client_port);
 
                 (*(Pool->g_worker_list + c->worker_id))->del_conn(c->id);
                 Pool->conn_client_free(c);

@@ -1,3 +1,8 @@
+example/async_dns
+example/client2
+lib/c-ares
+lib/c-ares-1.8.0
+lib/c-ares-1.8.0built
 *.dSYM
 example/client
 example/log

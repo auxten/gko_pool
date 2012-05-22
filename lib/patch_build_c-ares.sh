@@ -1,9 +1,9 @@
 #!/bin/sh
 
-NAME='libzdb'
-VER='2.10.3'
+NAME='c-ares'
+VER='1.8.0'
 TYPE='tar.gz'
-CONFIGURE_FLAGS='--without-postgresql --without-oci --without-sqlite'
+CONFIGURE_FLAGS=''
 
 #specify where to install by PREFIX or COMMAND-LINE ARG1
 if [ -n "$1" ]; then
@@ -34,6 +34,7 @@ cd ${SRCDIR}
 ./configure --prefix=${PREFIX} --enable-shared=no  --enable-static ${CONFIGURE_FLAGS}
 
 make; make install
+#cp *.h ../c-ares/include/
 cd ..
 
 rm -rf ${NAME}

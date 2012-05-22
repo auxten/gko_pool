@@ -20,6 +20,12 @@
 #include <sys/poll.h>
 #endif /** __APPLE__ **/
 
+char * addr_itoa(in_addr_t address, char * str)
+{
+    u_int32_t addr = (u_int32_t)address;
+    snprintf(str, 16,"%u.%u.%u.%u", (addr) % 256, (addr >> 8) % 256, (addr >> 16) % 256, (addr >> 24) % 256);
+    return str;
+}
 
 /**
  * @brief Set non-blocking
