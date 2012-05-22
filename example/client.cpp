@@ -16,6 +16,7 @@ void report_result(void * c, const char * msg)
 
 int main(int argc, char** argv)
 {
+    char cmd[] = "test cmd cmd cmdxxx";
     gko.opt.to_debug = 1;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
@@ -32,7 +33,7 @@ int main(int argc, char** argv)
     int i = 100000;
 
     while (i--)
-        gingko->make_active_connect("localhost", 2120, 1, 1, "test cmd cmd cmdxxx");
+        gingko->make_active_connect("localhost", 2120, 1, 1, strlen(cmd), cmd);
     sleep(3);
     return 0;
 }

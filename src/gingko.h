@@ -114,6 +114,8 @@ static const int        MAX_JOBS =              1024;
 static const GKO_INT64  MAX_LOG_REOPEN_LINE =   10;
 /// max log line count
 static const GKO_INT64  MAX_LOG_LINE =          (100000 * MAX_LOG_REOPEN_LINE);
+/// max log bytes per line
+static const GKO_INT64  MAX_LOG_BYTE =          4096;
 /// max length of a uri
 static const int        MAX_URI =               MAX_PATH_LEN;
 /// nftw depth this sames have no effect....whatever 100 is enough

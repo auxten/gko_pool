@@ -245,7 +245,7 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd);
+    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd);
 
 };
 

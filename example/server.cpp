@@ -27,7 +27,7 @@ void * conn_send_data(void * arg)
 
 int dispatch_cmd(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd)
 {
-    return gko_pool::getInstance()->make_active_connect(host, port, task_id, sub_task_id, cmd);
+    return gko_pool::getInstance()->make_active_connect(host, port, task_id, sub_task_id, strlen(cmd), cmd);
 }
 
 int main(int argc, char** argv)

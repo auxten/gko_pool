@@ -100,8 +100,9 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
 {
     int timeout_cnt = 0;
     gko_pool * Pool = gko_pool::getInstance();
+    std::list<int> timeout_client_l;
 
-    for (std::set<int>::iterator it = worker->conn_set.begin();
+    for (std::set<int>::const_iterator it = worker->conn_set.begin();
             it != worker->conn_set.end();
             ++it)
     {
@@ -115,13 +116,13 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                 if (conn->state == conn_waiting || conn->state == conn_read)
                 {
                     GKOLOG(NOTICE, "read income conn timeout, clean up");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write)
                 {
                     GKOLOG(NOTICE, "write income conn timeout, clean up");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
             }
@@ -133,7 +134,7 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_RECV_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write || conn->state == conn_connecting)
@@ -142,12 +143,20 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_SEND_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
             }
         }
     }
+
+    for (std::list<int>::const_iterator it = timeout_client_l.begin();
+            it != timeout_client_l.end();
+            ++it)
+    {
+        worker->del_conn((*(g_client_list + *it))->id);
+    }
+
     return timeout_cnt;
 }
 
@@ -388,7 +397,8 @@ void gko_pool::conn_set_state(conn_client *c, enum conn_states state)
         c->state = state;
         if (state == conn_closing &&
             c->task_id > 0 &&
-            c->sub_task_id > 0)
+            c->sub_task_id > 0 &&
+            c->err_no != INVILID)
         {
             if (gko_pool::getInstance()->reportHandler)
                 gko_pool::getInstance()->reportHandler(c, "");
@@ -613,7 +623,7 @@ void gko_pool::state_machine(conn_client *c)
                 parse_cmd_head(c->read_buffer, &proto_ver, &msg_len);
                 if (msg_len > 0)
                 {
-                    c->need_read = msg_len;
+                    c->need_read = msg_len + CMD_PREFIX_BYTE;
                     if (c->have_read < c->need_read)
                     {
                         conn_set_state(c, conn_read);
@@ -684,7 +694,7 @@ void gko_pool::state_machine(conn_client *c)
             case conn_write:
                 GKOLOG(DEBUG, "state: conn_write");
                 c->__need_write = c->need_write + CMD_PREFIX_BYTE;
-                fill_cmd_head(c->__write_buffer, c->__need_write);
+                fill_cmd_head(c->__write_buffer, c->need_write);
 
                 ret = awrite(c);
 

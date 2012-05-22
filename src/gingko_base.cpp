@@ -864,6 +864,7 @@ int readcmd(int fd, void* data, int max_len, int timeout)
 
     /// read the msg_len
     parse_cmd_head(head_buf, NULL, &msg_len);
+    msg_len += CMD_PREFIX_BYTE;
     if (msg_len > max_len)
     {
         GKOLOG(WARNING, "a too long msg: %u", msg_len);
@@ -1058,7 +1059,7 @@ int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const 
     }
     else
     {
-        fill_cmd_head(new_cmd, msg_len);
+        fill_cmd_head(new_cmd, msg_len - CMD_PREFIX_BYTE);
     }
     result = sendall(sock, new_cmd, msg_len, send_sec);
 
@@ -1097,7 +1098,7 @@ int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, cons
     }
     else
     {
-        fill_cmd_head(new_cmd, msg_len);
+        fill_cmd_head(new_cmd, msg_len - CMD_PREFIX_BYTE);
     }
     result = sendall(sock, new_cmd, msg_len, send_sec);
     if (result <= 0)

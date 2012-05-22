@@ -87,7 +87,7 @@ void gko_log_flf(const u_char log_level, const char *file, const int line, const
         int errnum = errno;
         va_list args;
         va_start(args, fmt);
-        char logstr[256];
+        char logstr[MAX_LOG_BYTE];
         char oldlogpath[MAX_PATH_LEN];
         static FILE * lastfp = NULL;
         static GKO_INT64 counter = 1;
