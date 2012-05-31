@@ -30,6 +30,7 @@ enum error_no {
     EXECUTE                 = 300,
     GKO_MYSQL               = 400,
     SERVER_INTERNAL         = 500,
+    DNS_RESOLVE             = 600,
 //////////////////// DO  NOT USE DIRECTLY above //////////////////////
     ////以上不要直接使用
 
@@ -47,6 +48,9 @@ enum error_no {
 
     /// 服务器内部状态
     SERVER_INTERNAL_ERROR   = SERVER_INTERNAL + ERROR + FAIL,
+
+    /// DNS解析错误
+    DNS_RESOLVE_FAIL        = DNS_RESOLVE + ERROR + FAIL,
 
 };
 #endif /* GKO_ERRNO_H_ */

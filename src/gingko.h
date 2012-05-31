@@ -137,7 +137,7 @@ static const int        BIND_FAIL =             -12;
 /// connect failed return
 static const int        HOST_DOWN_FAIL =        -13;
 /// connect failed return
-static const int        FD_BEFORE_CONNECT =     -250;
+static const int        FD_BEFORE_CONNECT =     -1;
 /// hello retry interval, in seconds
 static const int        HELO_RETRY_INTERVAL =   3;
 /// join retry interval, in seconds

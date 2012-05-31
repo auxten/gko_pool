@@ -1,4 +1,3 @@
-SUBDIRS = .
 INCLUDES = -I$(srcdir)/src \
     -I$(srcdir)/../../lib/libev/include 
 #    -I$(srcdir)/../../../../../../third-64/libev/include 

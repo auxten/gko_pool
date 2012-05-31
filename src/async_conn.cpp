@@ -98,6 +98,8 @@ int gko_pool::gko_async_server_base_init()
 
     set_sig(int_handler);
 
+    ares_library_init(ARES_LIB_INIT_ALL);/// not thread safe
+
     gko_serv.port = g_server->srv_port;
     return g_server->srv_port;
 }
@@ -215,6 +217,7 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     struct conn_client *client;
+    char ip[16];
     ///struct conn_server *server = (struct conn_server *) arg;
     /// Accept new connection
     client_fd = accept(fd, (struct sockaddr *) &client_addr, &client_len);
@@ -249,6 +252,10 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     client->client_addr = inet_addr(inet_ntoa(client_addr.sin_addr));
     client->client_port = ntohs(client_addr.sin_port);
     client->type = coming_conn;
+
+    GKOLOG(DEBUG, "coming conn %s:%d",
+            addr_itoa(client->client_addr, ip), client->client_port);
+
     gko_pool::getInstance()->thread_worker_dispatch(client->id);
 
     return;

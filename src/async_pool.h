@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include "ares.h"
 #include "event.h"
 
 #include "gko_errno.h"
@@ -44,6 +45,7 @@ public:
     int notify_recv_fd;
     int notify_send_fd;
     std::set<int> conn_set;
+    ares_channel dns_channel;
 
     /// put conn into current thread conn_set
     void add_conn(int c_id);
@@ -65,11 +67,7 @@ enum conn_states {
 
     /// for client side
     conn_connecting = 101,
-    conn_connected,
-    conn_timeout,
-    conn_reseted,
-    conn_connect_fail,
-    conn_closed,
+    conn_resolving,     /**< resoving DNS */
 
     conn_max_state      /**< Max state value (used for assertion) */
 };
@@ -92,6 +90,7 @@ struct conn_client
     time_t conn_time;
     func_t handle_client;
     struct event event;
+    struct event ev_dns;
     enum conn_states state;
     enum error_no err_no;
     enum conn_type type;
@@ -108,6 +107,7 @@ struct conn_client
     unsigned int __need_write;
     unsigned int need_write;
     unsigned int have_write;
+    char client_hostname[MAX_HOST_NAME + 1];
 
 };
 
@@ -197,11 +197,15 @@ private:
     static void state_machine(conn_client *c);
 
     /// non-blocking version connect
-    int nb_connect(const s_host_t * h, struct conn_client* conn);
+    int nb_connect(struct conn_client* conn);
     int connect_hosts(const std::vector<s_host_t> & host_vec,
      std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
 
+    /// non-blocking DNS
+    static void dns_callback(void* arg, int status, int timeouts, struct hostent* host);
+    static void dns_ev_callback(int fd, short ev, void *arg);
+    void nb_gethostbyname(conn_client *c);
 
     int clean_conn_timeout(thread_worker *worker, time_t now);
     int thread_worker_new(int id);

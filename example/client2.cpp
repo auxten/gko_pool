@@ -9,8 +9,8 @@
 
 /// gingko global stuff
 s_gingko_global_t gko;
-const int T_NUM = 1;
-const int CMD_CNT = 1;
+const int T_NUM = 100;
+const int CMD_CNT = 100;
 
 const s_host_t server =
     {

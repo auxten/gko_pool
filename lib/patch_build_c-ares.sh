@@ -27,9 +27,10 @@ if [ ! -d "${SRCDIR}" ]; then
         exit 1
 fi
 
-#cp ${NAME}_auxten.patch ${SRCDIR}/${NAME}_auxten.patch
+
+cp ${LIBNAME}_auxten.patch ${SRCDIR}/
 cd ${SRCDIR}
-#patch -p1 < ${NAME}_auxten.patch
+patch -p1 < ${LIBNAME}_auxten.patch
 
 ./configure --prefix=${PREFIX} --enable-shared=no  --enable-static ${CONFIGURE_FLAGS}
 

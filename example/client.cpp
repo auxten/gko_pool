@@ -8,10 +8,15 @@
 /// gingko global stuff
 s_gingko_global_t gko;
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int cnt = 0;
 
 void report_result(void * c, const char * msg)
 {
     GKOLOG(NOTICE, "%s", msg);
+    pthread_mutex_lock(&lock);
+    cnt++;
+    pthread_mutex_unlock(&lock);
 }
 
 int main(int argc, char** argv)
@@ -34,7 +39,10 @@ int main(int argc, char** argv)
 
     while (i--)
         gingko->make_active_connect("localhost", 2120, 1, 1, strlen(cmd), cmd);
-    sleep(3);
+    while (cnt != i)
+    {
+        sleep(1);
+    }
     return 0;
 }
 
