@@ -26,10 +26,10 @@ void report_result(void * c, const char * msg)
 int main(int argc, char** argv)
 {
     char cmd[] = "test cmd cmd cmdxxx";
-    gko.opt.to_debug = 1;
+    gko.opt.to_debug = 0;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
-    gko.opt.worker_thread = 2;
+    gko.opt.worker_thread = 4;
     gko.opt.connlimit = SERV_POOL_SIZE;
 //    gko.opt.to_debug = 1;
     gko_pool * gingko = gko_pool::getInstance();
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     int i = cnt;
     while (i--)
         gingko->make_active_connect("localhost", 2121, 1, 1, strlen(cmd), cmd);
-    
+
     sleep(10);
     return 0;
 }

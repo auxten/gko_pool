@@ -32,10 +32,10 @@ int dispatch_cmd(const char * host, const int port, const long task_id, const lo
 
 int main(int argc, char** argv)
 {
-    gko.opt.to_debug = 1;
+    gko.opt.to_debug = 0;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
-    gko.opt.worker_thread = 2;
+    gko.opt.worker_thread = 4;
     gko.opt.connlimit = SERV_POOL_SIZE;
     gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;
