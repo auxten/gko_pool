@@ -1,6 +1,6 @@
 .PHONY: all client server ares_dns
 
-INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/include -I../lib/c-ares/include -L../lib/libev/lib -lgko -lev -lgko_zip -lpthread 
+INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/include -I../lib/c-ares/include -L../lib/libev/lib -lgko -lev -lgko_zip -lpthread -lrt
 all: client client2 server ares_dns
 
 server:

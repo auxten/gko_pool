@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;
     gko_pool * gingko = gko_pool::getInstance();
-    gingko->setPort(2120);
+    gingko->setPort(2121);
     gingko->setOption(&gko.opt);
     gingko->setProcessHandler(conn_send_data);
 //    gingko->setReportHandler(report_result);

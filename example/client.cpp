@@ -9,13 +9,17 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 0;
-
+int cnt = 5000;
+int counter = 0;
 void report_result(void * c, const char * msg)
 {
     GKOLOG(NOTICE, "%s", msg);
     pthread_mutex_lock(&lock);
-    cnt++;
+    if (++counter == cnt)
+    {
+        printf("finished\n");
+        exit(0);
+    }
     pthread_mutex_unlock(&lock);
 }
 
@@ -35,14 +39,11 @@ int main(int argc, char** argv)
     gingko->setReportHandler(report_result);
     gingko->gko_run();
 
-    int i = 100000;
-
+    int i = cnt;
     while (i--)
-        gingko->make_active_connect("localhost", 2120, 1, 1, strlen(cmd), cmd);
-    while (cnt != i)
-    {
-        sleep(1);
-    }
+        gingko->make_active_connect("localhost", 2121, 1, 1, strlen(cmd), cmd);
+    
+    sleep(10);
     return 0;
 }
 
