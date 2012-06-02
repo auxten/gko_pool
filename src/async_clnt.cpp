@@ -35,7 +35,6 @@ int gko_pool::nb_connect(struct conn_client* conn)
 {
     int sock = -1;
     struct sockaddr_in channel;
-    in_addr_t host;
 
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (FAIL_CHECK(sock < 0))
@@ -62,7 +61,7 @@ int gko_pool::nb_connect(struct conn_client* conn)
     if (FAIL_CHECK(connect(sock, (struct sockaddr *) &channel, sizeof(channel)) &&
             errno != EINPROGRESS))
     {
-        GKOLOG(WARNING, "connect error %s:%d", addr_itoa(host, ip), conn->client_port);
+        GKOLOG(WARNING, "connect error %s:%d", addr_itoa(conn->client_addr, ip), conn->client_port);
     }
     GKOLOG(DEBUG, "after connect");
 
