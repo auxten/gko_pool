@@ -7,8 +7,8 @@ makelib:
 	cd lib && bash -x patch_build_all.sh && cd ..
 
 compile:
-	cd src && ./configure CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean && \
-	cd hash && make && cd .. && make -j 4 && cd ..
+	cd src && ./configure --prefix=$(shell pwd)/lib/libgko CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean && \
+	make -j 4 && make install && cd ..
 
 rm_config:
 	rm ./src/config.h

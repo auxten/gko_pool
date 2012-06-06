@@ -43,8 +43,6 @@
 #include "event.h"
 #include "config.h"
 
-#include "hash/xor_hash.h"
-#include "hash/gko_zip.h"
 #include "gingko.h"
 #include "log.h"
 #include "socket.h"

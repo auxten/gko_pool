@@ -45,7 +45,7 @@
 #endif /** __APPLE__ **/
 
 #include "event.h"
-#include "hermes_errno.h"
+#include "gko_errno.h"
 
 
 #ifndef GINGKO_H_
