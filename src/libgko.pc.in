@@ -10,5 +10,5 @@ Description: Async server and client framework
 URL: http://optool.net
 Version: 0.8
 Requires:
-Libs: -L${libdir} -lgko @venderlibsinc@ -lpthread
+Libs: -L${libdir} -Wl,-lgko @venderlibsinc@ -lpthread
 Cflags: -I${includedir} @venderincs@

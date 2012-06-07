@@ -1,3 +1,6 @@
+lib/c-ares-1.8.0.patched/
+lib/libgko/
+src/libgko.pc
 example/async_dns
 example/client2
 lib/c-ares
