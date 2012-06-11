@@ -9,7 +9,7 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 5000;
+int cnt = 50000;
 int counter = 0;
 void report_result(void * c, const char * msg)
 {
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
     gko.opt.to_debug = 0;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
-    gko.opt.worker_thread = 4;
+    gko.opt.worker_thread = 8;
     gko.opt.connlimit = SERV_POOL_SIZE;
 //    gko.opt.to_debug = 1;
     gko_pool * gingko = gko_pool::getInstance();

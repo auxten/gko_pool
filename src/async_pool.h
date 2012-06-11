@@ -30,7 +30,7 @@
 
 #include "gko_errno.h"
 
-static const int        RBUF_SZ =          (2 * 1024);
+static const int        RBUF_SZ =          (4 * 1024);
 static const int        WBUF_SZ =          (4 * 1024);
 
 /// Thread worker

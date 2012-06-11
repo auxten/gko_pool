@@ -149,7 +149,7 @@ void gko_log_flf(const u_char log_level, const char *file, const int line, const
             }
         }
         fprintf(gko.log_fp, "%s\n", logstr);
-        fflush(gko.log_fp);
+        //fflush(gko.log_fp);
         pthread_mutex_unlock(&g_logcut_lock);
 
         va_end(args);

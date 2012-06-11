@@ -111,7 +111,7 @@ static const int        MAX_PACKET_LEN =        65536;
 /// for global locks
 static const int        MAX_JOBS =              1024;
 /// max log line count to reopen log file, in case of file mv
-static const GKO_INT64  MAX_LOG_REOPEN_LINE =   1000;
+static const GKO_INT64  MAX_LOG_REOPEN_LINE =   100000;
 /// max log line count
 static const GKO_INT64  MAX_LOG_LINE =          (100000 * MAX_LOG_REOPEN_LINE);
 /// max log bytes per line

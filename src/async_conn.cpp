@@ -371,13 +371,13 @@ int gko_pool::conn_client_free(struct conn_client *client)
 void gko_pool::conn_buffer_init(conn_client *client)
 {
     /// todo calloc every connection comes?
-    client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
+    client->read_buffer = (char *)malloc(RBUF_SZ);
     client->rbuf_size = RBUF_SZ;
     client->have_read = 0;
     client->need_read = CMD_PREFIX_BYTE;
 
     /// todo calloc every connection comes?
-    client->__write_buffer = (char *)calloc(WBUF_SZ + CMD_PREFIX_BYTE, sizeof(char));
+    client->__write_buffer = (char *)malloc(WBUF_SZ + CMD_PREFIX_BYTE);
     client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
     client->wbuf_size = WBUF_SZ;
     client->have_write = 0;
