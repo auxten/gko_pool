@@ -990,7 +990,7 @@ int sendblocks(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num)
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-int writeblock(s_job_t * jo, const u_char * buf, s_block_t * blk)
+int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk)
 {
     GKO_INT64 f = blk->start_f;
     off_t offset = blk->start_off;

@@ -80,7 +80,7 @@ static struct timeval * get_timer(void)
  * @author auxten <wangpengcheng01@baidu.com> <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-void gko_log_flf(const u_char log_level, const char *file, const int line, const char *func, const char *fmt, ...)
+void gko_log_flf(const u_int8_t log_level, const char *file, const int line, const char *func, const char *fmt, ...)
 {
     if (gko.opt.to_debug || log_level < DEBUG )
     {

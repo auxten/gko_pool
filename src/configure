@@ -5189,6 +5189,32 @@ fi
 done
 
 
+###########################################################################
+## Use jemalloc on Linux
+###########################################################################
+#JEMALLOC_SUBDIR=
+#JEMALLOC_LDADD=
+#AC_ARG_WITH([jemalloc],
+#            [AS_HELP_STRING([--with-jemalloc],
+#              [use jemalloc memory allocator.  Default is yes on Linux,  no elsewhere])],
+#            [],
+#            [with_jemalloc=check])
+#
+#case $target in
+#    *-*-linux*)
+#        if test "x$with_jemalloc" != xno; then
+#            AC_CHECK_LIB([jemalloc], [malloc_conf],
+#                  [JEMALLOC_LDADD=" -Wl,-ljemalloc"],
+#                  [AC_MSG_NOTICE([No system jemalloc found, using bundled version])
+#                   JEMALLOC_SUBDIR=libjemalloc
+#                   JEMALLOC_LDADD=" -Wl,`pwd`/../lib/libjemalloc/libjemalloc_mt.a"])
+#	fi
+#	;;
+#esac
+#venderlibsinc=${JEMALLOC_LDADD}" "${venderlibsinc}
+#AC_SUBST(JEMALLOC_SUBDIR)
+#AC_SUBST(JEMALLOC_LDADD)
+###########################################################################
 
 ##########################################################################
 # check if libev exist

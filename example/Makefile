@@ -1,6 +1,6 @@
 .PHONY: clean all client server ares_dns
 
-LIBS= $(shell PKG_CONFIG_PATH=../lib/libgko/lib/pkgconfig pkg-config libgko --libs)
+LIBS= ../lib/jemalloc/lib/libjemalloc.a $(shell PKG_CONFIG_PATH=../lib/libgko/lib/pkgconfig pkg-config libgko --libs)
 CFLAGS= -g -O2 $(shell PKG_CONFIG_PATH=../lib/libgko/lib/pkgconfig pkg-config libgko --cflags)
 BINS = server client client2 ares_dns
 all: $(BINS)

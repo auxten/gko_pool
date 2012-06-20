@@ -3,4 +3,5 @@
 #r/w transform update time
 #nonblocking DNS resolve
 make a replacement of my_getaddr
-worker do accept
+long connection support
+mem pool
