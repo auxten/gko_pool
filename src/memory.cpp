@@ -19,8 +19,10 @@
 
 #include "log.h"
 
+
 gkoAlloc::gkoAlloc(void)
 {
+    pthread_mutex_t alloc_lock = PTHREAD_MUTEX_INITIALIZER;
     memset((void *) m_map, 0, M_MAP_SIZE * sizeof(u_int8_t));
     memset((void *) bucket_s, 0, BUCKET_COUNT * sizeof(void *));
     memset((void *) bucket_used, 0, BUCKET_COUNT * sizeof(int16_t));
@@ -80,7 +82,12 @@ int gkoAlloc::get_block(void)
     int i;
     int the_bucket;
     int idx;
+    u_int8_t * p_idx;
+    u_int64_t * bucket_start_idx;
+    u_int64_t * bucket_end_idx;
+    u_int64_t * bucket_idx;
 
+    pthread_mutex_lock(&alloc_lock);
     for (i = 0; i < BUCKET_COUNT; i++)
     {
         the_bucket = (latest_bucket + i) % BUCKET_COUNT;
@@ -95,7 +102,8 @@ int gkoAlloc::get_block(void)
     {
         fprintf(stderr, "out of memory in pool\n");
 //        GKOLOG(FATAL, "out of memory in pool");
-        return INVILID_BLOCK;
+        idx = INVILID_BLOCK;
+        goto GET_BLOCK_RET;
     }
 
     if (!bucket_s[the_bucket])
@@ -110,14 +118,14 @@ int gkoAlloc::get_block(void)
         {
             fprintf(stderr, "posix_memalign fail\n");
 //            GKOLOG(FATAL, "posix_memalign fail");
-            return INVILID_BLOCK;
+            idx = INVILID_BLOCK;
+            goto GET_BLOCK_RET;
         }
     }
 
-    u_int8_t * p_idx;
-    u_int64_t * bucket_start_idx = (u_int64_t *) &(this->m_map[the_bucket * BUCKET_CAPACITY / 8]);
-    u_int64_t * bucket_end_idx = (u_int64_t *) &(this->m_map[(the_bucket + 1) * BUCKET_CAPACITY / 8]);
-    for (u_int64_t * bucket_idx = bucket_start_idx;
+    bucket_start_idx = (u_int64_t *) &(this->m_map[the_bucket * BUCKET_CAPACITY / 8]);
+    bucket_end_idx = (u_int64_t *) &(this->m_map[(the_bucket + 1) * BUCKET_CAPACITY / 8]);
+    for (bucket_idx = bucket_start_idx;
             bucket_idx < bucket_end_idx;
             bucket_idx++)
     {
@@ -186,6 +194,9 @@ int gkoAlloc::get_block(void)
             continue;
         }
     }
+
+GET_BLOCK_RET:
+    pthread_mutex_unlock(&alloc_lock);
     return idx;
 }
 
@@ -195,6 +206,8 @@ void gkoAlloc::free_block(int block_id)
         return;
 
     int bucket_no = block_id / BUCKET_CAPACITY;
+
+    pthread_mutex_lock(&alloc_lock);
     free_bit(&m_map[block_id / 8], block_id % 8);
 
     if(--bucket_used[bucket_no] == 0)
@@ -202,6 +215,7 @@ void gkoAlloc::free_block(int block_id)
         free(bucket_s[bucket_no]);
         bucket_s[bucket_no] = NULL;
     }
+    pthread_mutex_unlock(&alloc_lock);
 
 }
 

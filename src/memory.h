@@ -9,6 +9,7 @@
 #define GKO_MEMORY_H_
 
 #include <sys/types.h>
+#include <pthread.h>
 
 static const u_int32_t      SLOT_SIZE       =   4 * 1024;                   /// one page is good
 static const u_int32_t      SLOT_COUNT      =   1 * 1024 * 1024;
@@ -22,6 +23,7 @@ static const int            INVILID_BLOCK   =   -1;
 class gkoAlloc
 {
 private:
+    pthread_mutex_t alloc_lock;
     u_int8_t m_map[M_MAP_SIZE]; /// 1MB can fit L2 cache
     void *  bucket_s[BUCKET_COUNT];
     int16_t bucket_used[BUCKET_COUNT];
