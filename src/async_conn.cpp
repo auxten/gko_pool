@@ -11,6 +11,7 @@
 #include "async_pool.h"
 #include "log.h"
 #include "socket.h"
+#include "memory.h"
 
 gko_pool * gko_pool::_instance = NULL;
 /// init global lock
@@ -370,16 +371,23 @@ int gko_pool::conn_client_free(struct conn_client *client)
 
 void gko_pool::conn_buffer_init(conn_client *client)
 {
+    gko_pool * Pool = gko_pool::getInstance();
+    thread_worker * worker = *(Pool->g_worker_list + client->worker_id);
     /// todo calloc every connection comes?
-    client->read_buffer = (char *)malloc(RBUF_SZ);
+    client->r_buf_arena_id = worker->mem.get_block();
+    client->w_buf_arena_id = worker->mem.get_block();
+    assert(client->r_buf_arena_id >= 0);
+    assert(client->w_buf_arena_id >= 0);
+
+    client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
     client->rbuf_size = RBUF_SZ;
     client->have_read = 0;
     client->need_read = CMD_PREFIX_BYTE;
 
     /// todo calloc every connection comes?
-    client->__write_buffer = (char *)malloc(WBUF_SZ + CMD_PREFIX_BYTE);
+    client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
     client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
-    client->wbuf_size = WBUF_SZ;
+    client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
     client->have_write = 0;
     client->__need_write = CMD_PREFIX_BYTE;
     client->need_write = 0;
@@ -402,12 +410,22 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         client->client_addr = 0;
         client->client_port = 0;
         client->err_no = SUCC;
+        thread_worker * worker = *(g_worker_list + client->worker_id);
 
         /// todo free every connection comes?
         if (client->read_buffer)
         {
-            free(client->read_buffer);
-            client->read_buffer = NULL;
+            if(client->r_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->r_buf_arena_id);
+                client->r_buf_arena_id = INVILID_BLOCK;
+                client->read_buffer = NULL;
+            }
+            else
+            {
+                free(client->read_buffer);
+                client->read_buffer = NULL;
+            }
         }
         client->rbuf_size = RBUF_SZ;
         client->have_read = 0;
@@ -416,10 +434,19 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         /// todo free every connection comes?
         if (client->__write_buffer)
         {
-            free(client->__write_buffer);
-            client->__write_buffer = NULL;
+            if(client->w_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->w_buf_arena_id);
+                client->w_buf_arena_id = INVILID_BLOCK;
+                client->__write_buffer = NULL;
+            }
+            else
+            {
+                free(client->__write_buffer);
+                client->__write_buffer = NULL;
+            }
         }
-        client->wbuf_size = WBUF_SZ;
+        client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
         client->have_write = 0;
         client->__need_write = CMD_PREFIX_BYTE;
         client->need_write = 0;

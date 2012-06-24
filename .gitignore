@@ -1,3 +1,8 @@
+example/ares_dns
+lib/jemalloc
+lib/jemalloc-3.0.0/
+lib/jemalloc-3.0.0built/
+lib/libjemalloc/
 lib/c-ares-1.8.0.patched/
 lib/libgko/
 src/libgko.pc

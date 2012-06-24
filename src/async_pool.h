@@ -27,11 +27,12 @@
 
 #include "ares.h"
 #include "event.h"
+#include "memory.h"
 
 #include "gko_errno.h"
 
-static const int        RBUF_SZ =          (4 * 1024);
-static const int        WBUF_SZ =          (4 * 1024);
+static const int        RBUF_SZ =          SLOT_SIZE;
+static const int        WBUF_SZ =          SLOT_SIZE;
 
 /// Thread worker
 class thread_worker
@@ -46,6 +47,7 @@ public:
     int notify_send_fd;
     std::set<int> conn_set;
     ares_channel dns_channel;
+    gkoAlloc mem;
 
     /// put conn into current thread conn_set
     void add_conn(int c_id);
@@ -96,11 +98,13 @@ struct conn_client
     enum conn_type type;
     int ev_flags;
 
+    int r_buf_arena_id;
     char *read_buffer;
     unsigned int rbuf_size;
     unsigned int need_read;
     unsigned int have_read;
 
+    int w_buf_arena_id;
     char *__write_buffer;
     char *write_buffer;
     unsigned int wbuf_size;
@@ -224,8 +228,10 @@ private:
     int conn_client_free(struct conn_client *client);
     /// Get client object from pool by given client_id
     struct conn_client * conn_client_list_get(int id);
-    /// Dispatch to worker
-    void thread_worker_dispatch(int sig_id);
+    /// Dispatch to worker to a thread
+    void thread_worker_dispatch(int c_id);
+    /// Dispatch to worker to the thread
+    void thread_worker_dispatch(int c_id, int worker_id);
     /// init the whole thread pool
     int thread_init();
     /// construct func

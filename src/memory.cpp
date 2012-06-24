@@ -7,7 +7,7 @@
  *  only support little endian : x86
  */
 
-#define MEM_TEST
+//#define MEM_TEST
 #define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,7 +27,7 @@ gkoAlloc::gkoAlloc(void)
     latest_bucket = 0;
 }
 
-inline void * gkoAlloc::id2addr(int block_id)
+void * gkoAlloc::id2addr(int block_id)
 {
     if (block_id < 0)
         return NULL;
@@ -35,19 +35,10 @@ inline void * gkoAlloc::id2addr(int block_id)
     int bucket_no = block_id / BUCKET_CAPACITY;
     int bucket_offset = SLOT_SIZE * (block_id % BUCKET_CAPACITY);
 
-    return (char *)bucket_s[bucket_no] + bucket_offset;
+    return ((char *)bucket_s[bucket_no]) + bucket_offset;
 }
 
-void free_block(int block_id)
-{
-    if (block_id < 0)
-        return;
-
-    int bucket_no = block_id / BUCKET_CAPACITY;
-
-}
-
-inline int gkoAlloc::get_free_bit(u_int8_t * b)
+int gkoAlloc::get_bit(u_int8_t * b)
 {
     /**
      *  idx     01234567
@@ -69,26 +60,19 @@ inline int gkoAlloc::get_free_bit(u_int8_t * b)
     return i;
 }
 
-inline int gkoAlloc::unget_free_bit(u_int8_t * b, int index)
+int gkoAlloc::free_bit(u_int8_t * b, int index)
 {
     /**
      *  idx     01234567
-     *  byte    11111010
+     *  byte    11111110
      *
      *  return 5 and
-     *  byte    11111110
+     *  byte    11111010
      */
-
-    int i;
-    for (i = 0; i < 8; i++)
-    {
-        if ((u_int8_t)((*b >> 7 - i) << 7) == (u_int8_t)0u)
-            break;
-    }
 
     *b ^= (u_int8_t)( 1u << 7 - index);
 
-    return i;
+    return index;
 }
 
 int gkoAlloc::get_block(void)
@@ -120,6 +104,7 @@ int gkoAlloc::get_block(void)
         if (!posix_memalign(&ptr, SLOT_SIZE, BUCKET_SIZE))
         {
             bucket_s[the_bucket] = ptr;
+            bucket_used[the_bucket] = 0;
         }
         else
         {
@@ -190,7 +175,7 @@ int gkoAlloc::get_block(void)
 
                 }
             }
-            idx = get_free_bit(p_idx) +
+            idx = get_bit(p_idx) +
                     8 * (p_idx - (u_int8_t *) bucket_start_idx) +
                     the_bucket * BUCKET_CAPACITY;
             bucket_used[the_bucket] ++;
@@ -204,11 +189,27 @@ int gkoAlloc::get_block(void)
     return idx;
 }
 
+void gkoAlloc::free_block(int block_id)
+{
+    if (block_id < 0)
+        return;
+
+    int bucket_no = block_id / BUCKET_CAPACITY;
+    free_bit(&m_map[block_id / 8], block_id % 8);
+
+    if(--bucket_used[bucket_no] == 0)
+    {
+        free(bucket_s[bucket_no]);
+        bucket_s[bucket_no] = NULL;
+    }
+
+}
+
 #ifdef MEM_TEST
 int main()
 {
     gkoAlloc mem;
-    for (int i = 0; i < SLOT_COUNT + 10; i++)
+    for (int i = 0; i < BUCKET_CAPACITY - 1; i++)
     {
         int k = mem.get_block();
         printf("%d, %d\n", i, k);
@@ -217,6 +218,15 @@ int main()
             break;
         }
     }
+    int blk1 = mem.get_block();
+    int blk2 = mem.get_block();
+    int blk3 = mem.get_block();
+    printf("%p\n", mem.id2addr(blk1));
+    printf("%p\n", mem.id2addr(blk2));
+    printf("%p\n", mem.id2addr(blk3));
+    mem.free_block(blk1);
+    mem.free_block(blk2);
+    mem.free_block(blk3);
     return 0;
 }
 #endif

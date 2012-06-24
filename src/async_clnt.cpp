@@ -101,6 +101,18 @@ int gko_pool::make_active_connect(const char * host, const int port, const long 
         return SERVER_INTERNAL_ERROR;
     }
 
+    int worker_id;
+    worker_id = thread_list_find_next();
+    if (worker_id < 0)
+    {
+        GKOLOG(WARNING, "can't find available thread");
+        return FAIL;
+    }
+    else
+    {
+        conn->worker_id = worker_id;
+    }
+
     GKOLOG(DEBUG, "conn_buffer_init");
     conn_buffer_init(conn);
 
@@ -115,7 +127,7 @@ int gko_pool::make_active_connect(const char * host, const int port, const long 
     conn->need_write = len;
     memcpy(conn->write_buffer, cmd, len);
 
-    thread_worker_dispatch(conn->id);
+    thread_worker_dispatch(conn->id, conn->worker_id);
     return SUCC;
 }
 

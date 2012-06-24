@@ -314,18 +314,17 @@ int gko_pool::thread_init()
 }
 
 /**
- * @brief Dispatch to worker
+ * @brief Dispatch to the specified worker
  *
  * @see
  * @note
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-void gko_pool::thread_worker_dispatch(int c_id)
+void gko_pool::thread_worker_dispatch(int c_id, int worker_id)
 {
-    int worker_id;
     int res;
-    worker_id = thread_list_find_next();
+
     if (worker_id < 0)
     {
         GKOLOG(WARNING, "can't find available thread");
@@ -337,6 +336,21 @@ void gko_pool::thread_worker_dispatch(int c_id)
     {
         GKOLOG(WARNING, "Pipe write error");
     }
+}
+
+/**
+ * @brief Dispatch to worker
+ *
+ * @see
+ * @note
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2011-8-1
+ **/
+void gko_pool::thread_worker_dispatch(int c_id)
+{
+    int worker_id;
+    worker_id = thread_list_find_next();
+    thread_worker_dispatch(c_id, worker_id);
 }
 
 int gko_pool::gko_loopexit(int timeout)
@@ -416,11 +430,29 @@ enum aread_result gko_pool::aread(conn_client *c)
     {
         if (c->have_read >= c->need_read)
         {
-            if (num_allocs == 4)
+            if (num_allocs++ == 4)
             {
                 return gotdata;
             }
-            ++num_allocs;
+
+            if (c->r_buf_arena_id >= 0)
+            {
+                char * buf = (char *)malloc(c->rbuf_size * 2);
+                if (!buf)
+                {
+                    GKOLOG(FATAL, FLF("Couldn't alloc input buffer"));
+                    c->have_read = 0; /* ignore what we read */
+                    return READ_MEMORY_ERROR;
+                }
+                memcpy(buf, c->read_buffer, c->rbuf_size);
+
+                gko_pool * Pool = gko_pool::getInstance();
+                thread_worker * worker = *(Pool->g_worker_list + c->worker_id);
+                worker->mem.free_block(c->r_buf_arena_id);
+                c->r_buf_arena_id = INVILID_BLOCK;
+                c->read_buffer = buf;
+                /// after that the following realloc should do nothing :)
+            }
             char *new_rbuf = (char *)realloc(c->read_buffer, c->rbuf_size * 2);
             if (!new_rbuf)
             {

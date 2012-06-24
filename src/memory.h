@@ -14,8 +14,8 @@ static const u_int32_t      SLOT_SIZE       =   4 * 1024;                   /// 
 static const u_int32_t      SLOT_COUNT      =   1 * 1024 * 1024;
 static const u_int32_t      M_MAP_SIZE      =   SLOT_COUNT / sizeof(u_int8_t);  /// bitmap
 static const u_int32_t      BUCKET_SIZE     =   16 * 1024 * 1024;
-static const u_int32_t      BUCKET_CAPACITY =   BUCKET_SIZE / SLOT_SIZE; /// capacity, 4096
-static const u_int32_t      BUCKET_COUNT    =   SLOT_COUNT / BUCKET_CAPACITY; /// 256
+static const int32_t        BUCKET_CAPACITY =   BUCKET_SIZE / SLOT_SIZE; /// capacity, 4096
+static const int32_t        BUCKET_COUNT    =   SLOT_COUNT / BUCKET_CAPACITY; /// 256
 static const int            INVILID_BLOCK   =   -1;
 
 
@@ -26,8 +26,8 @@ private:
     void *  bucket_s[BUCKET_COUNT];
     int16_t bucket_used[BUCKET_COUNT];
     int latest_bucket;
-    inline int get_free_bit(u_int8_t * b);
-    inline int unget_free_bit(u_int8_t * b, int index);
+    int get_bit(u_int8_t * b);
+    int free_bit(u_int8_t * b, int index);
 
 public:
     gkoAlloc(void);
@@ -36,7 +36,7 @@ public:
     int get2x_block(int block_id);
     void free_block(int block_id);
     int clear_block(void *block, int c, size_t size);
-    inline void * id2addr(int block_id);
+    void * id2addr(int block_id);
 };
 
 #endif /* GKO_MEMORY_H_ */
