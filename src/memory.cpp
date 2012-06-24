@@ -22,7 +22,7 @@
 
 gkoAlloc::gkoAlloc(void)
 {
-    pthread_mutex_t alloc_lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_init(&alloc_lock, NULL);
     memset((void *) m_map, 0, M_MAP_SIZE * sizeof(u_int8_t));
     memset((void *) bucket_s, 0, BUCKET_COUNT * sizeof(void *));
     memset((void *) bucket_used, 0, BUCKET_COUNT * sizeof(int16_t));
@@ -81,7 +81,7 @@ int gkoAlloc::get_block(void)
 {
     int i;
     int the_bucket;
-    int idx;
+    int idx = INVILID_BLOCK;
     u_int8_t * p_idx;
     u_int64_t * bucket_start_idx;
     u_int64_t * bucket_end_idx;
