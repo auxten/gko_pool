@@ -215,6 +215,10 @@ void gkoAlloc::free_block(int block_id)
         free(bucket_s[bucket_no]);
         bucket_s[bucket_no] = NULL;
     }
+    else
+    {
+        latest_bucket = bucket_no;
+    }
     pthread_mutex_unlock(&alloc_lock);
 
 }
