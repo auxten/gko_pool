@@ -41,15 +41,14 @@ static const char * LOG_DIC[] =
  * @author auxten <wangpengcheng01@baidu.com> <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-char * gettimestr(char * time, const char * format, struct timeval * tv)
+size_t gettimestr(char * time, const char * format, struct timeval * tv)
 {
     struct tm ltime;
     time_t curtime;
     gettimeofday(tv, NULL);
     curtime = tv->tv_sec;
     ///Format time
-    strftime(time, 25, format, localtime_r(&curtime, &ltime));
-    return time;
+    return strftime(time, 25, format, localtime_r(&curtime, &ltime));
 }
 
 static void make_key()
@@ -95,24 +94,24 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
         struct timeval time_diff;
         struct timeval * time_p = get_timer();
         long usec_diff;
+        int len = 0;
 
         memcpy(&last_timeval, time_p, sizeof(last_timeval));
 
-        snprintf(logstr, sizeof(logstr), "%s: [%u]", LOG_DIC[log_level], gko_gettid());
-        gettimestr(logstr + strlen(logstr), TIME_FORMAT, time_p);
+        len += snprintf(logstr, sizeof(logstr), "%s: [%u]", LOG_DIC[log_level], gko_gettid());
+        len += gettimestr(logstr + len, TIME_FORMAT, time_p);
         timersub(time_p, &last_timeval, &time_diff);
         usec_diff = time_diff.tv_sec * 1000000 + time_diff.tv_usec;
         if (usec_diff < 0)
             usec_diff = 0;
 
-        snprintf(logstr + strlen(logstr), sizeof(logstr) - strlen(logstr), "[%s:%d @%s][%ldus]\t", file, line, func, usec_diff);
-        vsnprintf(logstr + strlen(logstr), sizeof(logstr) - strlen(logstr), fmt, args);
+        len += snprintf(logstr + len, sizeof(logstr) - len, "[%s:%d @%s][%ldus]\t", file, line, func, usec_diff);
+        len += vsnprintf(logstr + len, sizeof(logstr) - len, fmt, args);
         if (log_level < NOTICE)
         {
-            snprintf(logstr + strlen(logstr), sizeof(logstr) - strlen(logstr),
-                    "; ");
-            strerror_r(errnum, logstr + strlen(logstr),
-                    sizeof(logstr) - strlen(logstr));
+            len += snprintf(logstr + len, sizeof(logstr) - len, "; ");
+            strerror_r(errnum, logstr + len,
+                    sizeof(logstr) - len);
         }
 
         pthread_mutex_lock(&g_logcut_lock);
@@ -132,7 +131,7 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
                 lastfp = gko.log_fp;
                 if (counter % MAX_LOG_LINE == 0)
                 {
-                    strncpy(oldlogpath, gko.opt.logpath, MAX_PATH_LEN);
+                    strncpy(oldlogpath, gko.opt.logpath, MAX_PATH_LEN - 1);
                     gettimestr(oldlogpath + strlen(oldlogpath), OLD_LOG_TIME, time_p);
                     rename(gko.opt.logpath, oldlogpath);
                 }
