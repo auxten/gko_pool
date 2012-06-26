@@ -232,7 +232,7 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     if (!client)
     {
         ///close socket and further receives will be disallowed
-        shutdown(client_fd, SHUT_RD);
+//        shutdown(client_fd, SHUT_RD);
         close(client_fd);
         GKOLOG(WARNING, "Server limited: I cannot serve more clients");
         return;
@@ -361,7 +361,7 @@ int gko_pool::conn_client_free(struct conn_client *client)
         return -1;
     }
     ///close socket and further receives will be disallowed
-    shutdown(client->client_fd, SHUT_RD);
+//    shutdown(client->client_fd, SHUT_RD);
     close(client->client_fd);
     conn_client_clear(client);
     g_total_clients--;

@@ -210,7 +210,7 @@ void gkoAlloc::free_block(int block_id)
     pthread_mutex_lock(&alloc_lock);
     free_bit(&m_map[block_id / 8], block_id % 8);
 
-    if(--bucket_used[bucket_no] == 0)
+    if(--bucket_used[bucket_no] == 0 && bucket_no)
     {
         free(bucket_s[bucket_no]);
         bucket_s[bucket_no] = NULL;
