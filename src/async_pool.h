@@ -65,6 +65,7 @@ enum conn_states {
     conn_parse_cmd,     /**< try to parse a command from the input buffer */
     conn_write,         /**< writing out a simple response */
     conn_mwrite,        /**< writing out many items sequentially */
+    conn_state_renew,   /**< reset conn for following requests(long connection) */
     conn_closing,       /**< closing this connection */
 
     /// for client side
@@ -222,6 +223,8 @@ private:
     struct conn_client * add_new_conn_client(int client_fd);
     /// Event on data from client
     int conn_client_list_find_free();
+    /// reset conn for following requests(long connection)
+    int conn_state_reset(struct conn_client *client);
     /// clear client struct
     int conn_client_clear(struct conn_client *client);
     /// clear the "session"

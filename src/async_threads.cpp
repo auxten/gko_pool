@@ -409,8 +409,8 @@ void gko_pool::conn_set_state(conn_client *c, enum conn_states state)
 //        GKOLOG(DEBUG, "stat#%d going to stat#%d", c->state, state);
         c->state = state;
         if (state == conn_closing &&
-            c->task_id > 0 &&
-            c->sub_task_id > 0 &&
+            c->task_id >= 0 &&
+            c->sub_task_id >= 0 &&
             c->err_no != INVILID)
         {
             if (gko_pool::getInstance()->reportHandler)
@@ -428,11 +428,11 @@ enum aread_result gko_pool::aread(conn_client *c)
 
     while (1)
     {
-        if (c->have_read >= c->need_read)
+        if (c->have_read >= c->rbuf_size) /// c->have_read > c->rbuf_size may not happen
         {
-            if (num_allocs++ == 4)
+            if (num_allocs++ == 20)
             {
-                return gotdata;
+                return READ_MEMORY_ERROR;
             }
 
             if (c->r_buf_arena_id >= 0)
@@ -775,7 +775,7 @@ void gko_pool::state_machine(conn_client *c)
                     case WRITE_DATA_SENT:
                         if (c->type == coming_conn)
                         {
-                            conn_set_state(c, conn_closing);
+                            conn_set_state(c, conn_state_renew);
                         }
                         else if (c->type == active_conn)
                         {
@@ -803,6 +803,11 @@ void gko_pool::state_machine(conn_client *c)
                         conn_set_state(c, conn_closing);
                         break;
                 }
+                break;
+
+            case conn_state_renew:
+                GKOLOG(DEBUG, "state: conn_state_reset");
+                Pool->conn_state_reset(c);
                 break;
 
             case conn_mwrite:

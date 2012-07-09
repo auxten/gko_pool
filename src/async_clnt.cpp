@@ -77,18 +77,6 @@ int gko_pool::nb_connect(struct conn_client* conn)
     return sock;
 }
 
-//int gko_pool::fill_request(const char * request, const int req_len, std::vector<struct conn_client> * conn_vec)
-//{
-//    for (std::vector<struct conn_client>::iterator it = conn_vec->begin();
-//            it != conn_vec->end();
-//            it++)
-//    {
-//        if (it->wbuf_size < req_len)
-//            strncpy(it->write_buffer, request, req_len);
-//    }
-//    return 0;
-//}
-
 int gko_pool::make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd)
 {
     struct conn_client * conn;

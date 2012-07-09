@@ -191,7 +191,7 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
         return -1;
     }
 
-    g_server->start_time = time((time_t *) NULL);
+    g_server->start_time = time(NULL);
 
     ///GKOLOG(WARNING, "Socket server created on port %d", server->srv_port);
     ///g_ev_base = event_init();
@@ -279,7 +279,7 @@ struct conn_client * gko_pool::add_new_conn_client(int client_fd)
     GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
     if (id >= 0)
     {
-        tmp = g_client_list[id];
+        tmp = conn_client_list_get(id);
     }
     else
     {
@@ -333,7 +333,7 @@ int gko_pool::conn_client_list_find_free()
             }
 
             conn_client_clear(g_client_list[tmp]);
-            g_client_list[tmp]->conn_time = time((time_t *) NULL);
+            g_client_list[tmp]->conn_time = time(NULL);
 
             g_curr_conn = tmp;
             break;
@@ -373,6 +373,8 @@ void gko_pool::conn_buffer_init(conn_client *client)
 {
     gko_pool * Pool = gko_pool::getInstance();
     thread_worker * worker = *(Pool->g_worker_list + client->worker_id);
+
+    client->err_no = INVILID;
     /// todo calloc every connection comes?
     client->r_buf_arena_id = worker->mem.get_block();
     client->w_buf_arena_id = worker->mem.get_block();
@@ -463,6 +465,73 @@ int gko_pool::conn_client_clear(struct conn_client *client)
     return -1;
 }
 
+int gko_pool::conn_state_reset(struct conn_client *client)
+{
+    if (client)
+    {
+        /**
+         * this is the flag of client usage,
+         * we must put it in the last place
+         */
+        client->conn_time = time(NULL);
+        /// Clear all data
+        client->err_no = SUCC;
+        client->task_id = -1;
+        client->sub_task_id = -1;
+        thread_worker * worker = *(g_worker_list + client->worker_id);
+
+        if (client->read_buffer)
+        {
+            if(client->r_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->r_buf_arena_id);
+                client->r_buf_arena_id = INVILID_BLOCK;
+                client->read_buffer = NULL;
+            }
+            else
+            {
+                free(client->read_buffer);
+                client->read_buffer = NULL;
+            }
+        }
+
+        client->r_buf_arena_id = worker->mem.get_block();
+        client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
+
+        client->rbuf_size = RBUF_SZ;
+        client->have_read = 0;
+        client->need_read = CMD_PREFIX_BYTE;
+
+        /// todo free every connection comes?
+        if (client->__write_buffer)
+        {
+            if(client->w_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->w_buf_arena_id);
+                client->w_buf_arena_id = INVILID_BLOCK;
+                client->__write_buffer = NULL;
+            }
+            else
+            {
+                free(client->__write_buffer);
+                client->__write_buffer = NULL;
+            }
+        }
+
+        client->w_buf_arena_id = worker->mem.get_block();
+        client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
+
+        client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
+        client->have_write = 0;
+        client->__need_write = CMD_PREFIX_BYTE;
+        client->need_write = 0;
+
+
+        return 0;
+    }
+
+    return -1;
+}
 /**
  * @brief Get client object from pool by given client_id
  *
