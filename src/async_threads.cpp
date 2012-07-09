@@ -807,7 +807,8 @@ void gko_pool::state_machine(conn_client *c)
 
             case conn_state_renew:
                 GKOLOG(DEBUG, "state: conn_state_reset");
-                Pool->conn_state_reset(c);
+                Pool->conn_renew(c);
+                conn_set_state(c, conn_waiting);
                 break;
 
             case conn_mwrite:

@@ -224,7 +224,7 @@ private:
     /// Event on data from client
     int conn_client_list_find_free();
     /// reset conn for following requests(long connection)
-    int conn_state_reset(struct conn_client *client);
+    int conn_renew(struct conn_client *client);
     /// clear client struct
     int conn_client_clear(struct conn_client *client);
     /// clear the "session"

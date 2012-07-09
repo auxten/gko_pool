@@ -465,7 +465,7 @@ int gko_pool::conn_client_clear(struct conn_client *client)
     return -1;
 }
 
-int gko_pool::conn_state_reset(struct conn_client *client)
+int gko_pool::conn_renew(struct conn_client *client)
 {
     if (client)
     {
