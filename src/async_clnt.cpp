@@ -77,7 +77,7 @@ int gko_pool::nb_connect(struct conn_client* conn)
     return sock;
 }
 
-int gko_pool::make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd)
+int gko_pool::make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag)
 {
     struct conn_client * conn;
 

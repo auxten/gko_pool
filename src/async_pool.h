@@ -31,8 +31,10 @@
 
 #include "gko_errno.h"
 
-static const int        RBUF_SZ =          SLOT_SIZE;
-static const int        WBUF_SZ =          SLOT_SIZE;
+static const int        RBUF_SZ =           SLOT_SIZE;
+static const int        WBUF_SZ =           SLOT_SIZE;
+static const u_int8_t   F_KEEPALIVE =       0x01;
+static const u_int8_t   F_CONN_REUSE =      0x02;
 
 /// Thread worker
 class thread_worker
@@ -258,7 +260,7 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd);
+    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
 
 };
 
