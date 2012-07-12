@@ -45,6 +45,7 @@ int gko_pool::thread_worker_new(int id)
         return -1;
     }
 
+    worker->userData = NULL;
     int fds[2];
     if (pipe(fds) != 0)
     {
@@ -245,6 +246,11 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
 
         Pool->nb_gethostbyname(client);
     }
+}
+
+thread_worker * gko_pool::getWorker(const struct conn_client * client)
+{
+    return *(g_worker_list + client->worker_id);
 }
 
 /**
@@ -466,7 +472,7 @@ enum aread_result gko_pool::aread(conn_client *c)
         }
 
         int avail = c->rbuf_size - c->have_read;
-        res = read(c->client_fd, c->read_buffer + c->have_read, avail);
+        res = read(c->client_fd, c->read_buffer + c->have_read, c->need_read - c->have_read);
         if (res > 0)
         {
             c->have_read += res;
@@ -705,7 +711,7 @@ void gko_pool::state_machine(conn_client *c)
                     else /* have read more than expect */
                     {
                         conn_set_state(c, conn_parse_cmd);
-                        GKOLOG(NOTICE, FLF("have read more than expect"));
+                        GKOLOG(NOTICE, "have read more than expect %u > %u", c->have_read, c->need_read);
                     }
                 }
                 else
