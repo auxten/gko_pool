@@ -50,6 +50,7 @@ public:
     std::set<int> conn_set;
     ares_channel dns_channel;
     gkoAlloc mem;
+    void * userData;
 
     /// put conn into current thread conn_set
     void add_conn(int c_id);
@@ -100,6 +101,8 @@ struct conn_client
     enum error_no err_no;
     enum conn_type type;
     int ev_flags;
+
+    void * userData;
 
     int r_buf_arena_id;
     char *read_buffer;
@@ -256,6 +259,7 @@ public:
     s_option_t *getOption() const;
     void setOption(s_option_t *option);
 
+    thread_worker * getWorker(const struct conn_client *);
     /// global run func
     int gko_run();
     int gko_loopexit(int timeout);
