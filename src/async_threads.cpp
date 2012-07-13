@@ -457,18 +457,22 @@ enum aread_result gko_pool::aread(conn_client *c)
                 worker->mem.free_block(c->r_buf_arena_id);
                 c->r_buf_arena_id = INVILID_BLOCK;
                 c->read_buffer = buf;
+                c->rbuf_size *= 2;
                 /// after that the following realloc should do nothing :)
             }
-            char *new_rbuf = (char *)realloc(c->read_buffer, c->rbuf_size * 2);
-            if (!new_rbuf)
+            else
             {
-                GKOLOG(FATAL, FLF("Couldn't realloc input buffer"));
-                c->have_read = 0; /* ignore what we read */
-                GKOLOG(FATAL, FLF("SERVER_ERROR out of memory reading request"));
-                return READ_MEMORY_ERROR;
+                char *new_rbuf = (char *)realloc(c->read_buffer, c->rbuf_size * 2);
+                if (!new_rbuf)
+                {
+                    GKOLOG(FATAL, FLF("Couldn't realloc input buffer"));
+                    c->have_read = 0; /* ignore what we read */
+                    GKOLOG(FATAL, FLF("SERVER_ERROR out of memory reading request"));
+                    return READ_MEMORY_ERROR;
+                }
+                c->read_buffer = new_rbuf;
+                c->rbuf_size *= 2;
             }
-            c->read_buffer = new_rbuf;
-            c->rbuf_size *= 2;
         }
 
         int avail = c->rbuf_size - c->have_read;
