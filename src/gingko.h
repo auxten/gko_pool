@@ -745,10 +745,16 @@ static inline void parse_cmd_head(const char * cmd, void * proto_ver, int * msg_
     if (proto_ver)
         * (unsigned short *)proto_ver = 0;
     *msg_len = 0;
-    const char * p = cmd + 1; /// leave 1 byte for proto_ver
+    const char * p = cmd;
     while (p - cmd < CMD_PREFIX_BYTE)
     {
+        if (*p > '9' || *p < '0')
+        {
+            *msg_len = -1;
+            break;
+        }
         *msg_len = (*msg_len) * 10 + *(p++) - '0';
     }
 }
+
 #endif /** GINGKO_H_ **/

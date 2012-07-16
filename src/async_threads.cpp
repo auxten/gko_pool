@@ -436,7 +436,7 @@ enum aread_result gko_pool::aread(conn_client *c)
     {
         if (c->have_read >= c->rbuf_size) /// c->have_read > c->rbuf_size may not happen
         {
-            if (num_allocs++ == 20)
+            if (num_allocs++ == 10)
             {
                 return READ_MEMORY_ERROR;
             }
@@ -476,7 +476,7 @@ enum aread_result gko_pool::aread(conn_client *c)
         }
 
         int avail = c->rbuf_size - c->have_read;
-        res = read(c->client_fd, c->read_buffer + c->have_read, c->need_read - c->have_read);
+        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, avail));
         if (res > 0)
         {
             c->have_read += res;
@@ -724,6 +724,10 @@ void gko_pool::state_machine(conn_client *c)
                     if (c->type == active_conn)
                     {
                         c->err_no = DISPATCH_RECV_ERROR;
+                    }
+                    else
+                    {
+                        c->err_no = RECV_ERROR;
                     }
                     conn_set_state(c, conn_closing);
                 }
