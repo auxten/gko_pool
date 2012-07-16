@@ -161,6 +161,9 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     }
     GKOLOG(NOTICE, "Upload port bind on port %d", g_server->srv_port);
 
+    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
+            sizeof(g_server->tcp_reuse));
+
     /// Listen socket
     if (listen(g_server->listen_fd, g_server->listen_queue_length) < 0)
     {
@@ -173,8 +176,6 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     send_timeout.tv_sec = g_server->send_timeout;
     send_timeout.tv_usec = 0;
 
-    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
-            sizeof(g_server->tcp_reuse));
     setsockopt(g_server->listen_fd, SOL_SOCKET, SO_SNDTIMEO,
             (char *) &send_timeout, sizeof(struct timeval));
     setsockopt(g_server->listen_fd, SOL_SOCKET, SO_SNDBUF,
