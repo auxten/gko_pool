@@ -257,6 +257,8 @@ int close_socket(int sock)
 //    {
 //        GKOLOG(WARNING, "set so_linger failed");
 //    }
+    if (sock < 0)
+        return 0;
     if (FAIL_CHECK(close(sock)))
     {
         GKOLOG(WARNING, "close sock error");

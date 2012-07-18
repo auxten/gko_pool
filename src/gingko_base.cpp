@@ -330,53 +330,6 @@ void ev_fn_gsend(int fd, short ev, void *arg)
 }
 
 
-/**
- * @brief send a mem to fd(usually socket)
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-//int sendall(int fd, const void * void_p, int sz, int flag)
-//{
-//    s_write_arg_t arg;
-//    if (!sz)
-//    {
-//        return 0;
-//    }
-//    if (!void_p)
-//    {
-//        GKOLOG(WARNING, "Null Pointer");
-//        return -1;
-//    }
-//    arg.sent = 0;
-//    arg.send_counter = 0;
-//    arg.sz = sz;
-//    arg.p = (char *) void_p;
-//    arg.flag = flag;
-//    arg.retry = 0;
-//    /// FIXME event_init() and event_base_free() waste open pipe
-//    arg.ev_base = event_init();
-//
-//    event_set(&(arg.ev_write), fd, EV_WRITE | EV_PERSIST, ev_fn_gsend,
-//            (void *) (&arg));
-//    event_base_set(arg.ev_base, &(arg.ev_write));
-//    if (-1 == event_add(&(arg.ev_write), 0))
-//    {
-//        GKOLOG(WARNING, "Cannot handle write data event");
-//    }
-//    event_base_loop(arg.ev_base, 0);
-//    event_del(&(arg.ev_write));
-//    event_base_free(arg.ev_base);
-//    ///GKOLOG(NOTICE, "sent: %d", arg.sent);
-//    if (arg.sent < 0)
-//    {
-//        GKOLOG(WARNING, "ev_fn_write error");
-//        return -1;
-//    }
-//    return 0;
-//}
 
 /**
  * @brief send a mem to fd(usually socket)
@@ -1111,6 +1064,43 @@ int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, cons
         GKOLOG(TRACE, "%s", read_result);
     }
     close_socket(sock);
+    return result;
+}
+
+int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout)
+{
+    int result = 0;
+    char ip[17];
+    char read_result[MSG_LEN];
+    s_host_t h;
+
+    if (host == NULL || fd == NULL || cmd == NULL || cmd_len < 0)
+    {
+        GKOLOG(FATAL, "invalid arg");
+        return -1;
+    }
+
+    if (*fd < 0)
+    {
+        memcpy(h.addr, host, sizeof(h.addr));
+        h.port = port;
+        *fd = connect_host(&h, timeout, timeout);
+        if (*fd < 0)
+        {
+            GKOLOG(DEBUG, "connect_host %s:%d error", h.addr, h.port);
+            return -1;
+        }
+    }
+
+    result = sendall(*fd, cmd, cmd_len, timeout);
+    if (result <= 0)
+    {
+        GKOLOG(WARNING, FLF("sendall failed"));
+        close_socket(*fd);
+        *fd = -1;
+        return result;
+    }
+
     return result;
 }
 

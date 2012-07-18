@@ -145,6 +145,9 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     g_server->listen_addr.sin_addr.s_addr = g_server->srv_addr;
     g_server->listen_addr.sin_port = htons(g_server->srv_port);
 
+    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
+            sizeof(g_server->tcp_reuse));
+
     /// Bind socket
     if (bind(g_server->listen_fd, (struct sockaddr *) &g_server->listen_addr,
             sizeof(g_server->listen_addr)) < 0)
@@ -160,9 +163,6 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
         }
     }
     GKOLOG(NOTICE, "Upload port bind on port %d", g_server->srv_port);
-
-    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
-            sizeof(g_server->tcp_reuse));
 
     /// Listen socket
     if (listen(g_server->listen_fd, g_server->listen_queue_length) < 0)

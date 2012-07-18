@@ -580,6 +580,8 @@ int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk);
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// send cmd msg to host, read response, on succ return 0
 int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
+/// try best send cmd to *fd, with reconnect
+int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout);
 /// try best to read specificed bytes from a file to buf
 int readfileall(int fd, off_t offset, off_t count, char ** buf);
 /// try best to read specificed bytes from a file to buf
