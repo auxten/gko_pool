@@ -1070,8 +1070,8 @@ int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, cons
 int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout)
 {
     int result = 0;
-    char ip[17];
-    char read_result[MSG_LEN];
+//    char ip[17];
+//    char read_result[MSG_LEN];
     s_host_t h;
 
     if (host == NULL || fd == NULL || cmd == NULL || cmd_len < 0)

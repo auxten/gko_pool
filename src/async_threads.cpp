@@ -62,7 +62,7 @@ int gko_pool::thread_worker_new(int id)
         return -1;
     }
 
-    dns_opt.flags = ARES_FLAG_PRIMARY; /// set while clean other flags
+    dns_opt.flags = 0;//ARES_FLAG_PRIMARY; /// set while clean other flags
     dns_ret = ares_init_options(&worker->dns_channel, &dns_opt, ARES_OPT_FLAGS);
     if (dns_ret != ARES_SUCCESS)
     {
@@ -476,7 +476,7 @@ enum aread_result gko_pool::aread(conn_client *c)
         }
 
         int avail = c->rbuf_size - c->have_read;
-        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, avail));
+        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, (unsigned int)avail));
         if (res > 0)
         {
             c->have_read += res;

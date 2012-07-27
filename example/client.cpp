@@ -9,7 +9,7 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 50000;
+int cnt = 55555000;
 int counter = 0;
 void report_result(void * c, const char * msg)
 {
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 
     int i = cnt;
     while (i--)
-        gingko->make_active_connect("localhost", 2121, 1, 1, strlen(cmd), cmd);
+        gingko->make_active_connect("baidu.com", 80, 1, 1, strlen(cmd), cmd);
 
     sleep(10);
     return 0;
