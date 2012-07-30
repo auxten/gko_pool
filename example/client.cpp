@@ -9,7 +9,7 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 55555000;
+int cnt = 5000;
 int counter = 0;
 void report_result(void * c, const char * msg)
 {

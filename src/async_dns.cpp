@@ -90,6 +90,8 @@ void gko_pool::nb_gethostbyname(conn_client *c)
     {
         GKOLOG(DEBUG, "error no fd");
         del_dns_event(c);
+        free(read_fds);
+        free(write_fds);
         return;
     }
 
