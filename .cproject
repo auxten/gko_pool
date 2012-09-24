@@ -27,12 +27,48 @@
 							<builder id="org.eclipse.cdt.build.core.settings.default.builder.1846958931" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.libs.841188167" name="holder for library settings" superClass="org.eclipse.cdt.build.core.settings.holder.libs"/>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1373621529" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder">
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.276977831" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ops-hermes/gko_pool/lib/c-ares/include}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/"/>
+									<listOptionValue builtIn="false" value="/usr/local/include/"/>
+									<listOptionValue builtIn="false" value="/Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/"/>
+								</option>
+								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1613791170" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__APPLE__"/>
+									<listOptionValue builtIn="false" value="__MACH__"/>
+									<listOptionValue builtIn="false" value="__need_struct_timeval"/>
+								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1512151841" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.526863639" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1159564976" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/"/>
+									<listOptionValue builtIn="false" value="/usr/local/include/"/>
+									<listOptionValue builtIn="false" value="/opt/local/include/mysql5/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.2.1/"/>
+									<listOptionValue builtIn="false" value="/usr/include/c++/4.2.1/backward/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ops-hermes/gko_pool/lib/c-ares/include}&quot;"/>
+									<listOptionValue builtIn="false" value="/Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/"/>
+								</option>
+								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1167459912" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__APPLE__"/>
+									<listOptionValue builtIn="false" value="__MACH__"/>
+									<listOptionValue builtIn="false" value="__need_struct_timeval"/>
+								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1007740700" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1546792434" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1809645337" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/"/>
+									<listOptionValue builtIn="false" value="/usr/local/include/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ops-hermes/gko_pool/lib/c-ares/include}&quot;"/>
+									<listOptionValue builtIn="false" value="/Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/"/>
+								</option>
+								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1616225806" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__APPLE__"/>
+									<listOptionValue builtIn="false" value="__MACH__"/>
+									<listOptionValue builtIn="false" value="__need_struct_timeval"/>
+								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1582263007" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 						</toolChain>
