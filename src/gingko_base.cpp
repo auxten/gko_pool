@@ -792,7 +792,7 @@ int readall(int fd, void* data, int data_len, int timeout)
 }
 
 /**
- * @brief read cmd, first 2 bytes are the length
+ * @brief read cmd, first CMD_PREFIX_BYTE bytes are the length
  *
  * @see
  * @note
@@ -1104,6 +1104,34 @@ int send2host_fd(const char * host, const int port, int * fd, const char * cmd, 
     return result;
 }
 
+int chat_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, char * response, const int max_response, const int timeout)
+{
+    int send_ret;
+    int read_ret;
+    int i = 1;
+
+    /// try twice
+    while ((send_ret = send2host_fd(host, port, fd, cmd, cmd_len, timeout)) < 0 && i--)
+    {
+        ///do nothing
+    }
+
+    if (send_ret < 0)
+    {
+        GKOLOG(WARNING, "send2host_fd failed msg: %s", cmd);
+        return send_ret;
+    }
+    else
+    {
+        read_ret = readcmd(*fd, response, max_response, timeout);
+        if (read_ret < 0)
+        {
+            GKOLOG(WARNING, "readcmd failed for msg: %s", cmd);
+            return read_ret;
+        }
+    }
+    return read_ret;
+}
 /**
  * quit func
  */

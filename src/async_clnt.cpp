@@ -55,7 +55,7 @@ int gko_pool::nb_connect(struct conn_client* conn)
         goto NB_CONNECT_END;
     }
 
-    GKOLOG(DEBUG, "before connect");
+//    GKOLOG(DEBUG, "before connect");
     char ip[16];
     /** connect and send the msg **/
     if (FAIL_CHECK(connect(sock, (struct sockaddr *) &channel, sizeof(channel)) &&
@@ -63,7 +63,7 @@ int gko_pool::nb_connect(struct conn_client* conn)
     {
         GKOLOG(WARNING, "connect error %s:%d", addr_itoa(conn->client_addr, ip), conn->client_port);
     }
-    GKOLOG(DEBUG, "after connect");
+//    GKOLOG(DEBUG, "after connect");
 
     NB_CONNECT_END:
 
@@ -77,7 +77,8 @@ int gko_pool::nb_connect(struct conn_client* conn)
     return sock;
 }
 
-int gko_pool::make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag)
+int gko_pool::make_active_connect(const char * host, const int port, const long task_id,
+        const long sub_task_id, int len, const char * cmd, const u_int8_t flag)
 {
     struct conn_client * conn;
 
@@ -101,7 +102,7 @@ int gko_pool::make_active_connect(const char * host, const int port, const long 
         conn->worker_id = worker_id;
     }
 
-    GKOLOG(DEBUG, "conn_buffer_init");
+//    GKOLOG(DEBUG, "conn_buffer_init");
     conn_buffer_init(conn);
 
     strncpy(conn->client_hostname, host, sizeof(conn->client_hostname) - 1);

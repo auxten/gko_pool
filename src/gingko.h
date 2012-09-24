@@ -88,8 +88,6 @@ static const int        MAX_REQ_SERV_BLOCKS =   5;
 static const int        MAX_REQ_CLNT_BLOCKS =   300;
 /// just like ZERO :p
 static const int        SERV_PORT =             2120;
-/// agent default port
-static const int        AGENT_PORT =            3000;
 /// indicate random port
 static const int        RANDOM_PORT =           -1;
 /// tcp buffer size
@@ -111,9 +109,9 @@ static const int        MAX_PACKET_LEN =        65536;
 /// for global locks
 static const int        MAX_JOBS =              1024;
 /// max log line count to reopen log file, in case of file mv
-static const GKO_INT64  MAX_LOG_REOPEN_LINE =   100000;
+static const GKO_INT64  MAX_LOG_REOPEN_LINE =   1000;
 /// max log line count
-static const GKO_INT64  MAX_LOG_LINE =          (100000 * MAX_LOG_REOPEN_LINE);
+static const GKO_INT64  MAX_LOG_LINE =          (10000 * MAX_LOG_REOPEN_LINE);
 /// max log bytes per line
 static const GKO_INT64  MAX_LOG_BYTE =          4096;
 /// max length of a uri
@@ -580,6 +578,8 @@ int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk);
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// send cmd msg to host, read response, on succ return 0
 int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
+/// try best send cmd to *fd, with retry twice then get response
+int chat_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, char * response, const int max_response, const int timeout);
 /// try best send cmd to *fd, with reconnect
 int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout);
 /// try best to read specificed bytes from a file to buf

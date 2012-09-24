@@ -267,7 +267,8 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
+    int make_active_connect(const char * host, const int port, const long task_id,
+            const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
 
 };
 

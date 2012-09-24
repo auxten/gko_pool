@@ -88,7 +88,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
 
     if ((*read_fds == *write_fds) && (*write_fds == ARES_SOCKET_BAD))
     {
-        GKOLOG(DEBUG, "error no fd");
+//        GKOLOG(DEBUG, "error no fd");
         del_dns_event(c);
         free(read_fds);
         free(write_fds);
