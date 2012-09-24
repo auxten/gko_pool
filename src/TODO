@@ -1,5 +1,7 @@
 #connection timeout
-connection error update_state()
+#connection error update_state()
 #r/w transform update time
-nonblocking DNS resolve
-worker do accept
+#nonblocking DNS resolve
+make a replacement of my_getaddr
+long connection support
+mem pool

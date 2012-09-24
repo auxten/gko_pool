@@ -8,6 +8,7 @@
  **/
 
 #include "gingko.h"
+#include "socket.h"
 #include "async_pool.h"
 #include "log.h"
 
@@ -34,6 +35,8 @@ void thread_worker::del_conn(int c_id)
 int gko_pool::thread_worker_new(int id)
 {
     int ret;
+    int dns_ret;
+    struct ares_options dns_opt;
 
     thread_worker *worker = new thread_worker;
     if (!worker)
@@ -42,6 +45,7 @@ int gko_pool::thread_worker_new(int id)
         return -1;
     }
 
+    worker->userData = NULL;
     int fds[2];
     if (pipe(fds) != 0)
     {
@@ -55,6 +59,14 @@ int gko_pool::thread_worker_new(int id)
     if (!worker->ev_base)
     {
         GKOLOG(FATAL, "Worker event base initialize error");
+        return -1;
+    }
+
+    dns_opt.flags = 0;//ARES_FLAG_PRIMARY; /// set while clean other flags
+    dns_ret = ares_init_options(&worker->dns_channel, &dns_opt, ARES_OPT_FLAGS);
+    if (dns_ret != ARES_SUCCESS)
+    {
+        GKOLOG(FATAL, "Ares_init failed: %s", ares_strerror(dns_ret));
         return -1;
     }
 
@@ -100,8 +112,9 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
 {
     int timeout_cnt = 0;
     gko_pool * Pool = gko_pool::getInstance();
+    std::list<int> timeout_client_l;
 
-    for (std::set<int>::iterator it = worker->conn_set.begin();
+    for (std::set<int>::const_iterator it = worker->conn_set.begin();
             it != worker->conn_set.end();
             ++it)
     {
@@ -115,13 +128,13 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                 if (conn->state == conn_waiting || conn->state == conn_read)
                 {
                     GKOLOG(NOTICE, "read income conn timeout, clean up");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write)
                 {
                     GKOLOG(NOTICE, "write income conn timeout, clean up");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
             }
@@ -133,7 +146,7 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_RECV_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write || conn->state == conn_connecting)
@@ -142,12 +155,20 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_SEND_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    (*(Pool->g_worker_list + conn->worker_id))->del_conn(conn->id);
+                    timeout_client_l.push_back(conn->id);;
                     Pool->conn_client_free(conn);
                 }
             }
         }
     }
+
+    for (std::list<int>::const_iterator it = timeout_client_l.begin();
+            it != timeout_client_l.end();
+            ++it)
+    {
+        worker->del_conn((*(g_client_list + *it))->id);
+    }
+
     return timeout_cnt;
 }
 
@@ -191,8 +212,9 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     thread_worker *worker = (thread_worker *) arg;
     int c_id;
     read(fd, &c_id, sizeof(int));
+    gko_pool * Pool = gko_pool::getInstance();
     struct conn_client *client =
-            gko_pool::getInstance()->conn_client_list_get(c_id);
+            Pool->conn_client_list_get(c_id);
 
     worker->add_conn(c_id);
     client->worker_id = worker->id;
@@ -219,24 +241,16 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     }
     else if (client->type == active_conn)
     {
-        client->state = conn_connecting;
-        GKOLOG(DEBUG, "conn_connecting");
+        client->state = conn_resolving;
+//        GKOLOG(DEBUG, "conn_resolving");
 
-        if (client->client_fd)
-        {
-            event_set(&client->event, client->client_fd, EV_WRITE | EV_PERSIST,
-                    worker_event_handler, (void *) client);
-            event_base_set(worker->ev_base, &client->event);
-            if (-1 == event_add(&client->event, 0))
-            {
-                GKOLOG(WARNING, "Cannot handle client's data event");
-            }
-        }
-        else
-        {
-            GKOLOG(WARNING, "conn_client_list_get error");
-        }
+        Pool->nb_gethostbyname(client);
     }
+}
+
+thread_worker * gko_pool::getWorker(const struct conn_client * client)
+{
+    return *(g_worker_list + client->worker_id);
 }
 
 /**
@@ -306,18 +320,17 @@ int gko_pool::thread_init()
 }
 
 /**
- * @brief Dispatch to worker
+ * @brief Dispatch to the specified worker
  *
  * @see
  * @note
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-void gko_pool::thread_worker_dispatch(int c_id)
+void gko_pool::thread_worker_dispatch(int c_id, int worker_id)
 {
-    int worker_id;
     int res;
-    worker_id = thread_list_find_next();
+
     if (worker_id < 0)
     {
         GKOLOG(WARNING, "can't find available thread");
@@ -329,6 +342,21 @@ void gko_pool::thread_worker_dispatch(int c_id)
     {
         GKOLOG(WARNING, "Pipe write error");
     }
+}
+
+/**
+ * @brief Dispatch to worker
+ *
+ * @see
+ * @note
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2011-8-1
+ **/
+void gko_pool::thread_worker_dispatch(int c_id)
+{
+    int worker_id;
+    worker_id = thread_list_find_next();
+    thread_worker_dispatch(c_id, worker_id);
 }
 
 int gko_pool::gko_loopexit(int timeout)
@@ -387,8 +415,9 @@ void gko_pool::conn_set_state(conn_client *c, enum conn_states state)
 //        GKOLOG(DEBUG, "stat#%d going to stat#%d", c->state, state);
         c->state = state;
         if (state == conn_closing &&
-            c->task_id > 0 &&
-            c->sub_task_id > 0)
+            c->task_id >= 0 &&
+            c->sub_task_id >= 0 &&
+            c->err_no != INVILID)
         {
             if (gko_pool::getInstance()->reportHandler)
                 gko_pool::getInstance()->reportHandler(c, "");
@@ -405,27 +434,49 @@ enum aread_result gko_pool::aread(conn_client *c)
 
     while (1)
     {
-        if (c->have_read >= c->need_read)
+        if (c->have_read >= c->rbuf_size) /// c->have_read > c->rbuf_size may not happen
         {
-            if (num_allocs == 4)
+            if (num_allocs++ == 10)
             {
-                return gotdata;
-            }
-            ++num_allocs;
-            char *new_rbuf = (char *)realloc(c->read_buffer, c->rbuf_size * 2);
-            if (!new_rbuf)
-            {
-                GKOLOG(FATAL, FLF("Couldn't realloc input buffer"));
-                c->have_read = 0; /* ignore what we read */
-                GKOLOG(FATAL, FLF("SERVER_ERROR out of memory reading request"));
                 return READ_MEMORY_ERROR;
             }
-            c->read_buffer = new_rbuf;
-            c->rbuf_size *= 2;
+
+            if (c->r_buf_arena_id >= 0)
+            {
+                char * buf = (char *)malloc(c->rbuf_size * 2);
+                if (!buf)
+                {
+                    GKOLOG(FATAL, FLF("Couldn't alloc input buffer"));
+                    c->have_read = 0; /* ignore what we read */
+                    return READ_MEMORY_ERROR;
+                }
+                memcpy(buf, c->read_buffer, c->rbuf_size);
+
+                gko_pool * Pool = gko_pool::getInstance();
+                thread_worker * worker = *(Pool->g_worker_list + c->worker_id);
+                worker->mem.free_block(c->r_buf_arena_id);
+                c->r_buf_arena_id = INVILID_BLOCK;
+                c->read_buffer = buf;
+                c->rbuf_size *= 2;
+                /// after that the following realloc should do nothing :)
+            }
+            else
+            {
+                char *new_rbuf = (char *)realloc(c->read_buffer, c->rbuf_size * 2);
+                if (!new_rbuf)
+                {
+                    GKOLOG(FATAL, FLF("Couldn't realloc input buffer"));
+                    c->have_read = 0; /* ignore what we read */
+                    GKOLOG(FATAL, FLF("SERVER_ERROR out of memory reading request"));
+                    return READ_MEMORY_ERROR;
+                }
+                c->read_buffer = new_rbuf;
+                c->rbuf_size *= 2;
+            }
         }
 
         int avail = c->rbuf_size - c->have_read;
-        res = read(c->client_fd, c->read_buffer + c->have_read, avail);
+        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, (unsigned int)avail));
         if (res > 0)
         {
             c->have_read += res;
@@ -543,9 +594,12 @@ void gko_pool::state_machine(conn_client *c)
     enum awrite_result ret;
     unsigned short proto_ver;
     int msg_len = 0;
+    int connect_ret;
+    char ip[16];
 
     assert(c != NULL);
     gko_pool * Pool = gko_pool::getInstance();
+    thread_worker * worker = *(Pool->g_worker_list + c->worker_id);
 
     while (!stop)
     {
@@ -557,13 +611,49 @@ void gko_pool::state_machine(conn_client *c)
                 GKOLOG(WARNING, "listening state again?!");
                 break;
 
+//            case conn_resolving:
+//                GKOLOG(DEBUG, "state: conn_resolving");
+//                stop = true;
+//                break;
+
             case conn_connecting:
-                GKOLOG(DEBUG, "state: conn_connecting");
-                conn_set_state(c, conn_write);
+//                GKOLOG(DEBUG, "state: conn_connecting");
+//                GKOLOG(DEBUG, "before nb_connect");
+                /// non-blocking connect
+                connect_ret = Pool->nb_connect(c);
+                if (connect_ret < 0)
+                {
+                    GKOLOG(FATAL, "nb_connect ret is %d", connect_ret);
+                    c->err_no = DISPATCH_SEND_ERROR;
+                    conn_set_state(c, conn_closing);
+                    break;
+                }
+
+                if (c->client_fd >= 0)
+                {
+                    event_set(&c->event, c->client_fd, EV_WRITE | EV_PERSIST,
+                            worker_event_handler, (void *) c);
+                    event_base_set(worker->ev_base, &c->event);
+                    if (-1 == event_add(&c->event, 0))
+                    {
+                        GKOLOG(WARNING, "Cannot handle client's data event");
+                    }
+                    conn_set_state(c, conn_write);
+                    stop = true;
+                }
+                else
+                {
+                    GKOLOG(FATAL, "invilid client fd %d", c->client_fd);
+                    c->err_no = DISPATCH_SEND_ERROR;
+                    conn_set_state(c, conn_closing);
+                    break;
+                }
+
+//                GKOLOG(DEBUG, "after nb_connect");
                 break;
 
             case conn_waiting:
-                GKOLOG(DEBUG, "state: conn_waiting");
+//                GKOLOG(DEBUG, "state: conn_waiting");
                 if (!update_event(c, EV_READ | EV_PERSIST))
                 {
                     GKOLOG(WARNING, "Couldn't update event");
@@ -577,7 +667,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_read:
-                GKOLOG(DEBUG, "state: conn_read");
+//                GKOLOG(DEBUG, "state: conn_read");
                 res = aread(c);
 
                 switch (res)
@@ -609,11 +699,11 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_parse_header:
-                GKOLOG(DEBUG, "state: conn_parse_header");
+//                GKOLOG(DEBUG, "state: conn_parse_header");
                 parse_cmd_head(c->read_buffer, &proto_ver, &msg_len);
                 if (msg_len > 0)
                 {
-                    c->need_read = msg_len;
+                    c->need_read = msg_len + CMD_PREFIX_BYTE;
                     if (c->have_read < c->need_read)
                     {
                         conn_set_state(c, conn_read);
@@ -625,7 +715,7 @@ void gko_pool::state_machine(conn_client *c)
                     else /* have read more than expect */
                     {
                         conn_set_state(c, conn_parse_cmd);
-                        GKOLOG(NOTICE, FLF("have read more than expect"));
+                        GKOLOG(NOTICE, "have read more than expect %u > %u", c->have_read, c->need_read);
                     }
                 }
                 else
@@ -635,17 +725,21 @@ void gko_pool::state_machine(conn_client *c)
                     {
                         c->err_no = DISPATCH_RECV_ERROR;
                     }
+                    else
+                    {
+                        c->err_no = RECV_ERROR;
+                    }
                     conn_set_state(c, conn_closing);
                 }
 
                 break;
 
             case conn_parse_cmd:     /**< try to parse a command from the input buffer */
-                GKOLOG(DEBUG, "state: conn_parse_cmd");
+//                GKOLOG(DEBUG, "state: conn_parse_cmd");
 
                 if (c->type == coming_conn)
                 {
-                    if (Pool->g_server->on_data_callback)
+                    if (Pool->g_server && Pool->g_server->on_data_callback)
                     {
                         Pool->g_server->on_data_callback((void *) c);
                     }
@@ -663,11 +757,12 @@ void gko_pool::state_machine(conn_client *c)
                 else if (c->type == active_conn)
                 {
                     c->err_no = INVILID;
-                    if (Pool->reportHandler)
+                    if (Pool->g_server && Pool->g_server->on_data_callback)
                     {
-                        Pool->reportHandler(c, c->read_buffer + CMD_PREFIX_BYTE);
+                        Pool->g_server->on_data_callback((void *) c);
                     }
                     conn_set_state(c, conn_closing);
+                    break;
                 }
 
                 if (nreqs-- == 0)
@@ -677,14 +772,15 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_nread:         /**< reading in a fixed number of bytes */
-                GKOLOG(DEBUG, "state: conn_nread");
+//                GKOLOG(DEBUG, "state: conn_nread");
                 GKOLOG(FATAL, "NOT Supported yet :p");
                 break;
 
             case conn_write:
-                GKOLOG(DEBUG, "state: conn_write");
+//                GKOLOG(DEBUG, "state: conn_write");
                 c->__need_write = c->need_write + CMD_PREFIX_BYTE;
-                fill_cmd_head(c->__write_buffer, c->__need_write);
+                if (!c->have_write)
+                    fill_cmd_head(c->__write_buffer, c->need_write);
 
                 ret = awrite(c);
 
@@ -692,7 +788,9 @@ void gko_pool::state_machine(conn_client *c)
                 {
                     case WRITE_DATA_SENT:
                         if (c->type == coming_conn)
-                            conn_set_state(c, conn_closing);
+                        {
+                            conn_set_state(c, conn_state_renew);
+                        }
                         else if (c->type == active_conn)
                         {
                             c->conn_time = time(NULL);
@@ -702,15 +800,16 @@ void gko_pool::state_machine(conn_client *c)
 
                     case WRITE_HEADER_SENT: /// fall through
                     case WRITE_SENT_MORE:
+                        stop = true;
                         break;
                     case WRITE_NO_DATA_SENT:
-                        GKOLOG(FATAL, FLF("write no data sent"));
+                        GKOLOG(FATAL, "write no data sent");
                         c->err_no = SERVER_INTERNAL_ERROR;
                         conn_set_state(c, conn_closing);
                         break;
 
                     case WRITE_ERROR:
-                        GKOLOG(WARNING, FLF("write to socket error"));
+                        GKOLOG(WARNING, "write to socket error, closing");
                         if (c->type == active_conn)
                         {
                             c->err_no = DISPATCH_SEND_ERROR;
@@ -720,21 +819,27 @@ void gko_pool::state_machine(conn_client *c)
                 }
                 break;
 
+            case conn_state_renew:
+//                GKOLOG(DEBUG, "state: conn_state_reset");
+                Pool->conn_renew(c);
+                conn_set_state(c, conn_waiting);
+                break;
+
             case conn_mwrite:
-                GKOLOG(DEBUG, "state: conn_mwrite");
+//                GKOLOG(DEBUG, "state: conn_mwrite");
                 GKOLOG(FATAL, "NOT Supported yet :p");
                 break;
 
             case conn_closing:
-                GKOLOG(DEBUG, "state: conn_closing");
+                GKOLOG(DEBUG, "state: conn_closing %s:%d", addr_itoa(c->client_addr, ip), c->client_port);
 
-                (*(Pool->g_worker_list + c->worker_id))->del_conn(c->id);
+                worker->del_conn(c->id);
                 Pool->conn_client_free(c);
                 stop = true;
                 break;
 
             case conn_max_state:
-                GKOLOG(DEBUG, "state: conn_max_state");
+//                GKOLOG(DEBUG, "state: conn_max_state");
                 assert(false);
                 break;
 

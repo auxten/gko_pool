@@ -8,6 +8,8 @@
 #ifndef SOCKET_H_
 #define SOCKET_H_
 
+/// in_addr_t to ascii
+char * addr_itoa(in_addr_t address, char * str);
 /// Set non-blocking
 int setnonblock(int fd);
 /// Set blocking

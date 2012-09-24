@@ -43,8 +43,6 @@
 #include "event.h"
 #include "config.h"
 
-#include "hash/xor_hash.h"
-#include "hash/gko_zip.h"
 #include "gingko.h"
 #include "log.h"
 #include "socket.h"
@@ -332,53 +330,6 @@ void ev_fn_gsend(int fd, short ev, void *arg)
 }
 
 
-/**
- * @brief send a mem to fd(usually socket)
- *
- * @see
- * @note
- * @author auxten  <auxtenwpc@gmail.com>
- * @date 2011-8-1
- **/
-//int sendall(int fd, const void * void_p, int sz, int flag)
-//{
-//    s_write_arg_t arg;
-//    if (!sz)
-//    {
-//        return 0;
-//    }
-//    if (!void_p)
-//    {
-//        GKOLOG(WARNING, "Null Pointer");
-//        return -1;
-//    }
-//    arg.sent = 0;
-//    arg.send_counter = 0;
-//    arg.sz = sz;
-//    arg.p = (char *) void_p;
-//    arg.flag = flag;
-//    arg.retry = 0;
-//    /// FIXME event_init() and event_base_free() waste open pipe
-//    arg.ev_base = event_init();
-//
-//    event_set(&(arg.ev_write), fd, EV_WRITE | EV_PERSIST, ev_fn_gsend,
-//            (void *) (&arg));
-//    event_base_set(arg.ev_base, &(arg.ev_write));
-//    if (-1 == event_add(&(arg.ev_write), 0))
-//    {
-//        GKOLOG(WARNING, "Cannot handle write data event");
-//    }
-//    event_base_loop(arg.ev_base, 0);
-//    event_del(&(arg.ev_write));
-//    event_base_free(arg.ev_base);
-//    ///GKOLOG(NOTICE, "sent: %d", arg.sent);
-//    if (arg.sent < 0)
-//    {
-//        GKOLOG(WARNING, "ev_fn_write error");
-//        return -1;
-//    }
-//    return 0;
-//}
 
 /**
  * @brief send a mem to fd(usually socket)
@@ -841,7 +792,7 @@ int readall(int fd, void* data, int data_len, int timeout)
 }
 
 /**
- * @brief read cmd, first 2 bytes are the length
+ * @brief read cmd, first CMD_PREFIX_BYTE bytes are the length
  *
  * @see
  * @note
@@ -864,6 +815,7 @@ int readcmd(int fd, void* data, int max_len, int timeout)
 
     /// read the msg_len
     parse_cmd_head(head_buf, NULL, &msg_len);
+    msg_len += CMD_PREFIX_BYTE;
     if (msg_len > max_len)
     {
         GKOLOG(WARNING, "a too long msg: %u", msg_len);
@@ -991,7 +943,7 @@ int sendblocks(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num)
  * @author auxten  <auxtenwpc@gmail.com>
  * @date 2011-8-1
  **/
-int writeblock(s_job_t * jo, const u_char * buf, s_block_t * blk)
+int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk)
 {
     GKO_INT64 f = blk->start_f;
     off_t offset = blk->start_off;
@@ -1058,7 +1010,7 @@ int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const 
     }
     else
     {
-        fill_cmd_head(new_cmd, msg_len);
+        fill_cmd_head(new_cmd, msg_len - CMD_PREFIX_BYTE);
     }
     result = sendall(sock, new_cmd, msg_len, send_sec);
 
@@ -1097,7 +1049,7 @@ int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, cons
     }
     else
     {
-        fill_cmd_head(new_cmd, msg_len);
+        fill_cmd_head(new_cmd, msg_len - CMD_PREFIX_BYTE);
     }
     result = sendall(sock, new_cmd, msg_len, send_sec);
     if (result <= 0)
@@ -1115,6 +1067,71 @@ int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, cons
     return result;
 }
 
+int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout)
+{
+    int result = 0;
+//    char ip[17];
+//    char read_result[MSG_LEN];
+    s_host_t h;
+
+    if (host == NULL || fd == NULL || cmd == NULL || cmd_len < 0)
+    {
+        GKOLOG(FATAL, "invalid arg");
+        return -1;
+    }
+
+    if (*fd < 0)
+    {
+        memcpy(h.addr, host, sizeof(h.addr));
+        h.port = port;
+        *fd = connect_host(&h, timeout, timeout);
+        if (*fd < 0)
+        {
+            GKOLOG(DEBUG, "connect_host %s:%d error", h.addr, h.port);
+            return -1;
+        }
+    }
+
+    result = sendall(*fd, cmd, cmd_len, timeout);
+    if (result <= 0)
+    {
+        GKOLOG(WARNING, FLF("sendall failed"));
+        close_socket(*fd);
+        *fd = -1;
+        return result;
+    }
+
+    return result;
+}
+
+int chat_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, char * response, const int max_response, const int timeout)
+{
+    int send_ret;
+    int read_ret;
+    int i = 1;
+
+    /// try twice
+    while ((send_ret = send2host_fd(host, port, fd, cmd, cmd_len, timeout)) < 0 && i--)
+    {
+        ///do nothing
+    }
+
+    if (send_ret < 0)
+    {
+        GKOLOG(WARNING, "send2host_fd failed msg: %s", cmd);
+        return send_ret;
+    }
+    else
+    {
+        read_ret = readcmd(*fd, response, max_response, timeout);
+        if (read_ret < 0)
+        {
+            GKOLOG(WARNING, "readcmd failed for msg: %s", cmd);
+            return read_ret;
+        }
+    }
+    return read_ret;
+}
 /**
  * quit func
  */

@@ -8,39 +8,43 @@
 /// gingko global stuff
 s_gingko_global_t gko;
 
-
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int cnt = 5000;
+int counter = 0;
 void report_result(void * c, const char * msg)
 {
-    if (strlen(msg) != 0)
-        GKOLOG(NOTICE, "%s", msg);
-}
-
-
-int dispatch_cmd(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd)
-{
-    return gko_pool::getInstance()->make_active_connect(host, port, task_id, sub_task_id, cmd);
+    GKOLOG(NOTICE, "%s", msg);
+    pthread_mutex_lock(&lock);
+    if (++counter == cnt)
+    {
+        printf("finished\n");
+        exit(0);
+    }
+    pthread_mutex_unlock(&lock);
 }
 
 int main(int argc, char** argv)
 {
-    gko.opt.to_debug = 1;
+    char cmd[] = "test cmd cmd cmdxxx";
+    gko.opt.to_debug = 0;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
-    gko.opt.port = SERV_PORT;
-    gko.opt.worker_thread = 2;
+    gko.opt.worker_thread = 8;
     gko.opt.connlimit = SERV_POOL_SIZE;
-    gko.opt.bind_ip = htons(INADDR_ANY);
 //    gko.opt.to_debug = 1;
     gko_pool * gingko = gko_pool::getInstance();
-    gingko->setPort(2120);
+    gingko->setPort(-1);
     gingko->setOption(&gko.opt);
 //    gingko->setProcessHandler(conn_send_data);
     gingko->setReportHandler(report_result);
     gingko->gko_run();
 
-    dispatch_cmd("localhost", 2120, 1, 1, "test cmd cmd cmdxxx");
-    GKOLOG(DEBUG, "Debug mode start, i will print tons of log :p!");
+    int i = cnt;
+    while (i--)
+        gingko->make_active_connect("baidu.com", 80, 1, 1, strlen(cmd), cmd);
 
+    sleep(10);
+    return 0;
 }
 
 

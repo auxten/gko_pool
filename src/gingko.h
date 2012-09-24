@@ -45,7 +45,7 @@
 #endif /** __APPLE__ **/
 
 #include "event.h"
-#include "hermes_errno.h"
+#include "gko_errno.h"
 
 
 #ifndef GINGKO_H_
@@ -88,8 +88,6 @@ static const int        MAX_REQ_SERV_BLOCKS =   5;
 static const int        MAX_REQ_CLNT_BLOCKS =   300;
 /// just like ZERO :p
 static const int        SERV_PORT =             2120;
-/// agent default port
-static const int        AGENT_PORT =            3000;
 /// indicate random port
 static const int        RANDOM_PORT =           -1;
 /// tcp buffer size
@@ -111,9 +109,11 @@ static const int        MAX_PACKET_LEN =        65536;
 /// for global locks
 static const int        MAX_JOBS =              1024;
 /// max log line count to reopen log file, in case of file mv
-static const GKO_INT64  MAX_LOG_REOPEN_LINE =   10;
+static const GKO_INT64  MAX_LOG_REOPEN_LINE =   1000;
 /// max log line count
-static const GKO_INT64  MAX_LOG_LINE =          (100000 * MAX_LOG_REOPEN_LINE);
+static const GKO_INT64  MAX_LOG_LINE =          (10000 * MAX_LOG_REOPEN_LINE);
+/// max log bytes per line
+static const GKO_INT64  MAX_LOG_BYTE =          4096;
 /// max length of a uri
 static const int        MAX_URI =               MAX_PATH_LEN;
 /// nftw depth this sames have no effect....whatever 100 is enough
@@ -135,7 +135,7 @@ static const int        BIND_FAIL =             -12;
 /// connect failed return
 static const int        HOST_DOWN_FAIL =        -13;
 /// connect failed return
-static const int        FD_BEFORE_CONNECT =     -250;
+static const int        FD_BEFORE_CONNECT =     -1;
 /// hello retry interval, in seconds
 static const int        HELO_RETRY_INTERVAL =   3;
 /// join retry interval, in seconds
@@ -228,19 +228,19 @@ static GKO_CONST_STR     TIME_FORMAT =          "[%m-%d %H:%M:%S]";
 static GKO_CONST_STR     OLD_LOG_TIME =         ".%Y%m%d%H%M%S";
 
 /// host_hash usage
-static const u_char  DEL_HOST =                 0x01;
-static const u_char  ADD_HOST =                 0x02;
+static const u_int8_t  DEL_HOST =                 0x01;
+static const u_int8_t  ADD_HOST =                 0x02;
 
 /// job state
-static const u_char  INITING =                  0x01;    ///initializing
-static const u_char  INITED =                   0x02;    ///initialized
+static const u_int8_t  INITING =                  0x01;    ///initializing
+static const u_int8_t  INITED =                   0x02;    ///initialized
 
 /// lock state
-static const u_char  LK_USING =                 0x01;
-static const u_char  LK_FREE =                  0x00;
+static const u_int8_t  LK_USING =                 0x01;
+static const u_int8_t  LK_FREE =                  0x00;
 
 /// get_blocks_c flag
-static const u_char  W_DISK =                   0x01;
+static const u_int8_t  W_DISK =                   0x01;
 
 
 /// calculate the offset of a member in struct
@@ -347,7 +347,7 @@ typedef struct _s_file_t
     GKO_INT64 size; /// -1 for dir, -2 for symbol link
     char sympath[MAX_PATH_LEN];
     char name[MAX_PATH_LEN];
-    u_char md5[16];
+    u_int8_t md5[16];
 } s_file_t;
 
 /// host structure
@@ -363,7 +363,7 @@ typedef struct _s_block_t
     GKO_INT64 size;
     GKO_INT64 start_off;
     GKO_INT64 start_f;
-    u_char done;
+    u_int8_t done;
     unsigned int digest;
     std::set<s_host_t> * host_set; ///only used by client, lock here
 } s_block_t;
@@ -373,7 +373,7 @@ typedef struct
 {
     GKO_INT64 range[2];
     s_job_t * p;
-    u_char * buf;
+    u_int8_t * buf;
     int index;
 } hash_worker_thread_arg;
 
@@ -398,7 +398,7 @@ typedef struct _s_job_t
     GKO_INT64 hash_progress[XOR_HASH_TNUM]; /// the hash progress in byte
     /** hash worker threads **/
     pthread_t hash_worker[XOR_HASH_TNUM];
-    u_char * hash_buf[XOR_HASH_TNUM];
+    u_int8_t * hash_buf[XOR_HASH_TNUM];
     hash_worker_thread_arg arg[XOR_HASH_TNUM];
 } s_job_t;
 
@@ -518,14 +518,14 @@ typedef struct _s_gingko_global_t
     int snap_fd;
 
     /// signal flag
-    volatile u_char sig_flag;
+    volatile u_int8_t sig_flag;
 } s_gingko_global_t;
 
 /// for snap file read and write
 typedef struct _s_snap_t
 {
     unsigned int digest;
-    u_char done;
+    u_int8_t done;
 } s_snap_t;
 #pragma pack ()
 
@@ -537,7 +537,7 @@ int helo_serv_c(void * arg, int fd, s_host_t * server);
 void * join_job_c(void *, int);
 /// send GETT handler
 GKO_INT64 get_blocks_c(s_job_t * jo, s_host_t * dhost, GKO_INT64 num, GKO_INT64 count,
-        u_char flag, char * buf);
+        u_int8_t flag, char * buf);
 
 /************** FUNC DECL **************/
 /// send JOIN handler
@@ -567,17 +567,21 @@ int check_ulimit();
 //int erase_job(string &uri_string);
 /// hash the host to the data ring
 s_host_hash_result_t * host_hash(s_job_t * jo, const s_host_t * new_host,
-        s_host_hash_result_t * result, const u_char usage);
+        s_host_hash_result_t * result, const u_int8_t usage);
 /// send blocks to the out_fd(usually socket)
 int sendblocks(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num);
 /// send zipped blocks to the out_fd(usually socket)
 int sendblocks_zip(int out_fd, s_job_t * jo, GKO_INT64 start, GKO_INT64 num);
 /// write block to disk
-int writeblock(s_job_t * jo, const u_char * buf, s_block_t * blk);
+int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk);
 /// send cmd msg to host, not read response, on succ return 0
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// send cmd msg to host, read response, on succ return 0
 int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
+/// try best send cmd to *fd, with retry twice then get response
+int chat_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, char * response, const int max_response, const int timeout);
+/// try best send cmd to *fd, with reconnect
+int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout);
 /// try best to read specificed bytes from a file to buf
 int readfileall(int fd, off_t offset, off_t count, char ** buf);
 /// try best to read specificed bytes from a file to buf
@@ -743,10 +747,16 @@ static inline void parse_cmd_head(const char * cmd, void * proto_ver, int * msg_
     if (proto_ver)
         * (unsigned short *)proto_ver = 0;
     *msg_len = 0;
-    const char * p = cmd + 1; /// leave 1 byte for proto_ver
+    const char * p = cmd;
     while (p - cmd < CMD_PREFIX_BYTE)
     {
+        if (*p > '9' || *p < '0')
+        {
+            *msg_len = -1;
+            break;
+        }
         *msg_len = (*msg_len) * 10 + *(p++) - '0';
     }
 }
+
 #endif /** GINGKO_H_ **/

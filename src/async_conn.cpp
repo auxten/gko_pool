@@ -11,6 +11,7 @@
 #include "async_pool.h"
 #include "log.h"
 #include "socket.h"
+#include "memory.h"
 
 gko_pool * gko_pool::_instance = NULL;
 /// init global lock
@@ -53,12 +54,8 @@ int gko_pool::conn_client_list_init()
 int gko_pool::gko_async_server_base_init()
 {
     g_server = new conn_server;
-    if(! g_server)
-    {
-        GKOLOG(FATAL, "new for g_server failed");
-        return -1;
-    }
     memset(g_server, 0, sizeof(struct conn_server));
+
     g_server->srv_addr = option->bind_ip;
     if (this->port < 0)
     {
@@ -101,6 +98,8 @@ int gko_pool::gko_async_server_base_init()
     }
 
     set_sig(int_handler);
+
+    ares_library_init(ARES_LIB_INIT_ALL);/// not thread safe
 
     gko_serv.port = g_server->srv_port;
     return g_server->srv_port;
@@ -146,6 +145,9 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     g_server->listen_addr.sin_addr.s_addr = g_server->srv_addr;
     g_server->listen_addr.sin_port = htons(g_server->srv_port);
 
+    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
+            sizeof(g_server->tcp_reuse));
+
     /// Bind socket
     if (bind(g_server->listen_fd, (struct sockaddr *) &g_server->listen_addr,
             sizeof(g_server->listen_addr)) < 0)
@@ -174,8 +176,6 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     send_timeout.tv_sec = g_server->send_timeout;
     send_timeout.tv_usec = 0;
 
-    setsockopt(g_server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &g_server->tcp_reuse,
-            sizeof(g_server->tcp_reuse));
     setsockopt(g_server->listen_fd, SOL_SOCKET, SO_SNDTIMEO,
             (char *) &send_timeout, sizeof(struct timeval));
     setsockopt(g_server->listen_fd, SOL_SOCKET, SO_SNDBUF,
@@ -192,7 +192,7 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
         return -1;
     }
 
-    g_server->start_time = time((time_t *) NULL);
+    g_server->start_time = time(NULL);
 
     ///GKOLOG(WARNING, "Socket server created on port %d", server->srv_port);
     ///g_ev_base = event_init();
@@ -219,6 +219,7 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     struct conn_client *client;
+    char ip[16];
     ///struct conn_server *server = (struct conn_server *) arg;
     /// Accept new connection
     client_fd = accept(fd, (struct sockaddr *) &client_addr, &client_len);
@@ -232,7 +233,7 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     if (!client)
     {
         ///close socket and further receives will be disallowed
-        shutdown(client_fd, SHUT_RD);
+//        shutdown(client_fd, SHUT_RD);
         close(client_fd);
         GKOLOG(WARNING, "Server limited: I cannot serve more clients");
         return;
@@ -253,6 +254,10 @@ void gko_pool::conn_tcp_server_accept(int fd, short ev, void *arg)
     client->client_addr = inet_addr(inet_ntoa(client_addr.sin_addr));
     client->client_port = ntohs(client_addr.sin_port);
     client->type = coming_conn;
+
+    GKOLOG(DEBUG, "coming conn %s:%d",
+            addr_itoa(client->client_addr, ip), client->client_port);
+
     gko_pool::getInstance()->thread_worker_dispatch(client->id);
 
     return;
@@ -272,10 +277,10 @@ struct conn_client * gko_pool::add_new_conn_client(int client_fd)
     struct conn_client *tmp = (struct conn_client *) NULL;
     /// Find a free slot
     id = conn_client_list_find_free();
-    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
+//    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
     if (id >= 0)
     {
-        tmp = g_client_list[id];
+        tmp = conn_client_list_get(id);
     }
     else
     {
@@ -329,7 +334,7 @@ int gko_pool::conn_client_list_find_free()
             }
 
             conn_client_clear(g_client_list[tmp]);
-            g_client_list[tmp]->conn_time = time((time_t *) NULL);
+            g_client_list[tmp]->conn_time = time(NULL);
 
             g_curr_conn = tmp;
             break;
@@ -357,7 +362,7 @@ int gko_pool::conn_client_free(struct conn_client *client)
         return -1;
     }
     ///close socket and further receives will be disallowed
-    shutdown(client->client_fd, SHUT_RD);
+//    shutdown(client->client_fd, SHUT_RD);
     close(client->client_fd);
     conn_client_clear(client);
     g_total_clients--;
@@ -367,16 +372,25 @@ int gko_pool::conn_client_free(struct conn_client *client)
 
 void gko_pool::conn_buffer_init(conn_client *client)
 {
+    gko_pool * Pool = gko_pool::getInstance();
+    thread_worker * worker = *(Pool->g_worker_list + client->worker_id);
+
+    client->err_no = INVILID;
     /// todo calloc every connection comes?
-    client->read_buffer = (char *)calloc(RBUF_SZ, sizeof(char));
+    client->r_buf_arena_id = worker->mem.get_block();
+    client->w_buf_arena_id = worker->mem.get_block();
+    assert(client->r_buf_arena_id >= 0);
+    assert(client->w_buf_arena_id >= 0);
+
+    client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
     client->rbuf_size = RBUF_SZ;
     client->have_read = 0;
     client->need_read = CMD_PREFIX_BYTE;
 
     /// todo calloc every connection comes?
-    client->__write_buffer = (char *)calloc(WBUF_SZ + CMD_PREFIX_BYTE, sizeof(char));
+    client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
     client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
-    client->wbuf_size = WBUF_SZ;
+    client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
     client->have_write = 0;
     client->__need_write = CMD_PREFIX_BYTE;
     client->need_write = 0;
@@ -399,12 +413,22 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         client->client_addr = 0;
         client->client_port = 0;
         client->err_no = SUCC;
+        thread_worker * worker = *(g_worker_list + client->worker_id);
 
         /// todo free every connection comes?
         if (client->read_buffer)
         {
-            free(client->read_buffer);
-            client->read_buffer = NULL;
+            if(client->r_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->r_buf_arena_id);
+                client->r_buf_arena_id = INVILID_BLOCK;
+                client->read_buffer = NULL;
+            }
+            else
+            {
+                free(client->read_buffer);
+                client->read_buffer = NULL;
+            }
         }
         client->rbuf_size = RBUF_SZ;
         client->have_read = 0;
@@ -413,10 +437,19 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         /// todo free every connection comes?
         if (client->__write_buffer)
         {
-            free(client->__write_buffer);
-            client->__write_buffer = NULL;
+            if(client->w_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->w_buf_arena_id);
+                client->w_buf_arena_id = INVILID_BLOCK;
+                client->__write_buffer = NULL;
+            }
+            else
+            {
+                free(client->__write_buffer);
+                client->__write_buffer = NULL;
+            }
         }
-        client->wbuf_size = WBUF_SZ;
+        client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
         client->have_write = 0;
         client->__need_write = CMD_PREFIX_BYTE;
         client->need_write = 0;
@@ -433,6 +466,73 @@ int gko_pool::conn_client_clear(struct conn_client *client)
     return -1;
 }
 
+int gko_pool::conn_renew(struct conn_client *client)
+{
+    if (client)
+    {
+        /**
+         * this is the flag of client usage,
+         * we must put it in the last place
+         */
+        client->conn_time = time(NULL);
+        /// Clear all data
+        client->err_no = SUCC;
+        client->task_id = -1;
+        client->sub_task_id = -1;
+        thread_worker * worker = *(g_worker_list + client->worker_id);
+
+        if (client->read_buffer)
+        {
+            if(client->r_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->r_buf_arena_id);
+                client->r_buf_arena_id = INVILID_BLOCK;
+                client->read_buffer = NULL;
+            }
+            else
+            {
+                free(client->read_buffer);
+                client->read_buffer = NULL;
+            }
+        }
+
+        client->r_buf_arena_id = worker->mem.get_block();
+        client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
+
+        client->rbuf_size = RBUF_SZ;
+        client->have_read = 0;
+        client->need_read = CMD_PREFIX_BYTE;
+
+        /// todo free every connection comes?
+        if (client->__write_buffer)
+        {
+            if(client->w_buf_arena_id >= 0)
+            {
+                worker->mem.free_block(client->w_buf_arena_id);
+                client->w_buf_arena_id = INVILID_BLOCK;
+                client->__write_buffer = NULL;
+            }
+            else
+            {
+                free(client->__write_buffer);
+                client->__write_buffer = NULL;
+            }
+        }
+
+        client->w_buf_arena_id = worker->mem.get_block();
+        client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
+
+        client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
+        client->have_write = 0;
+        client->__need_write = CMD_PREFIX_BYTE;
+        client->need_write = 0;
+
+
+        return 0;
+    }
+
+    return -1;
+}
 /**
  * @brief Get client object from pool by given client_id
  *
@@ -451,6 +551,7 @@ gko_pool::gko_pool(const int pt)
     :
         g_curr_thread(0),
         g_curr_conn(0),
+        g_server(NULL),
         port(pt),
         pHandler(NULL),
         reportHandler(NULL)
@@ -466,6 +567,8 @@ gko_pool::gko_pool()
     :
         g_curr_thread(0),
         g_curr_conn(0),
+        g_server(NULL),
+        port(-1),
         pHandler(NULL),
         reportHandler(NULL)
 {
@@ -522,7 +625,7 @@ gko_pool *gko_pool::getInstance()
 int gko_pool::gko_run()
 {
 
-    if (gko_async_server_base_init() < 0)
+    if (port >= 0 && gko_async_server_base_init() < 0)
     {
         GKOLOG(FATAL, "gko_async_server_base_init failed");
         return -2;

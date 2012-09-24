@@ -25,12 +25,18 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <vector>
+
+#include "ares.h"
 #include "event.h"
+#include "memory.h"
 
 #include "gko_errno.h"
 
-static const int        RBUF_SZ =          (2 * 1024);
-static const int        WBUF_SZ =          (4 * 1024);
+static const int        RBUF_SZ =           SLOT_SIZE;
+static const int        WBUF_SZ =           SLOT_SIZE;
+static const u_int8_t   F_KEEPALIVE =       0x01;
+static const u_int8_t   F_CONN_REUSE =      0x02;
 
 /// Thread worker
 class thread_worker
@@ -44,6 +50,9 @@ public:
     int notify_recv_fd;
     int notify_send_fd;
     std::set<int> conn_set;
+    ares_channel dns_channel;
+    gkoAlloc mem;
+    void * userData;
 
     /// put conn into current thread conn_set
     void add_conn(int c_id);
@@ -61,15 +70,12 @@ enum conn_states {
     conn_parse_cmd,     /**< try to parse a command from the input buffer */
     conn_write,         /**< writing out a simple response */
     conn_mwrite,        /**< writing out many items sequentially */
+    conn_state_renew,   /**< reset conn for following requests(long connection) */
     conn_closing,       /**< closing this connection */
 
     /// for client side
     conn_connecting = 101,
-    conn_connected,
-    conn_timeout,
-    conn_reseted,
-    conn_connect_fail,
-    conn_closed,
+    conn_resolving,     /**< resoving DNS */
 
     conn_max_state      /**< Max state value (used for assertion) */
 };
@@ -92,22 +98,28 @@ struct conn_client
     time_t conn_time;
     func_t handle_client;
     struct event event;
+    std::vector<struct event *> ev_dns_vec;
     enum conn_states state;
     enum error_no err_no;
     enum conn_type type;
     int ev_flags;
 
+    void * userData;
+
+    int r_buf_arena_id;
     char *read_buffer;
     unsigned int rbuf_size;
     unsigned int need_read;
     unsigned int have_read;
 
+    int w_buf_arena_id;
     char *__write_buffer;
     char *write_buffer;
     unsigned int wbuf_size;
     unsigned int __need_write;
     unsigned int need_write;
     unsigned int have_write;
+    char client_hostname[MAX_HOST_NAME + 1];
 
 };
 
@@ -130,7 +142,6 @@ struct conn_server
     struct event ev_accept;
     //void *(* on_data_callback)(void *);
     ProcessHandler_t on_data_callback;
-    ReportHandler_t report_conn_status;
 };
 
 enum aread_result {
@@ -198,11 +209,16 @@ private:
     static void state_machine(conn_client *c);
 
     /// non-blocking version connect
-    int nb_connect(const s_host_t * h, struct conn_client* conn);
+    int nb_connect(struct conn_client* conn);
     int connect_hosts(const std::vector<s_host_t> & host_vec,
      std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
 
+    /// non-blocking DNS
+    static int del_dns_event(conn_client *c);
+    static void dns_callback(void* arg, int status, int timeouts, struct hostent* host);
+    static void dns_ev_callback(int fd, short ev, void *arg);
+    void nb_gethostbyname(conn_client *c);
 
     int clean_conn_timeout(thread_worker *worker, time_t now);
     int thread_worker_new(int id);
@@ -215,14 +231,18 @@ private:
     struct conn_client * add_new_conn_client(int client_fd);
     /// Event on data from client
     int conn_client_list_find_free();
+    /// reset conn for following requests(long connection)
+    int conn_renew(struct conn_client *client);
     /// clear client struct
     int conn_client_clear(struct conn_client *client);
     /// clear the "session"
     int conn_client_free(struct conn_client *client);
     /// Get client object from pool by given client_id
     struct conn_client * conn_client_list_get(int id);
-    /// Dispatch to worker
-    void thread_worker_dispatch(int sig_id);
+    /// Dispatch to worker to a thread
+    void thread_worker_dispatch(int c_id);
+    /// Dispatch to worker to the thread
+    void thread_worker_dispatch(int c_id, int worker_id);
     /// init the whole thread pool
     int thread_init();
     /// construct func
@@ -242,11 +262,13 @@ public:
     s_option_t *getOption() const;
     void setOption(s_option_t *option);
 
+    thread_worker * getWorker(const struct conn_client *);
     /// global run func
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, const char * cmd);
+    int make_active_connect(const char * host, const int port, const long task_id,
+            const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
 
 };
 

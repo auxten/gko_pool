@@ -10,7 +10,6 @@
 
 #include "gingko.h"
 #include "async_pool.h"
-#include "hash/xor_hash.h"
 #include "log.h"
 #include "socket.h"
 

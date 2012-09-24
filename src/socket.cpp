@@ -20,6 +20,12 @@
 #include <sys/poll.h>
 #endif /** __APPLE__ **/
 
+char * addr_itoa(in_addr_t address, char * str)
+{
+    u_int32_t addr = (u_int32_t)address;
+    snprintf(str, 16,"%u.%u.%u.%u", (addr) & 255u, (addr >> 8) & 255u, (addr >> 16) & 255u, (addr >> 24) & 255u);
+    return str;
+}
 
 /**
  * @brief Set non-blocking
@@ -251,6 +257,8 @@ int close_socket(int sock)
 //    {
 //        GKOLOG(WARNING, "set so_linger failed");
 //    }
+    if (sock < 0)
+        return 0;
     if (FAIL_CHECK(close(sock)))
     {
         GKOLOG(WARNING, "close sock error");

@@ -1,9 +1,9 @@
 #!/bin/sh
 
-NAME='libzdb'
-VER='2.10.3'
-TYPE='tar.gz'
-CONFIGURE_FLAGS='--without-postgresql --without-oci --without-sqlite'
+NAME='jemalloc'
+VER='3.0.0'
+TYPE='tar.bz2'
+CONFIGURE_FLAGS=''
 
 #specify where to install by PREFIX or COMMAND-LINE ARG1
 if [ -n "$1" ]; then
@@ -21,7 +21,7 @@ if [ ! -f "${FILE}" ]; then
         echo "error: no ${FILE}"
         exit 1
 fi
-tar xvzf ${FILE}
+tar xvjf ${FILE}
 if [ ! -d "${SRCDIR}" ]; then
         echo "error: no ${SRCDIR}"
         exit 1

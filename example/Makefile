@@ -1,10 +1,23 @@
-.PHONY: all client server
+.PHONY: clean all client server ares_dns
 
-INCLUDE_LIB_PATH = -I../src -L../src -I../src/hash -L../src/hash -I../lib/libev/include -L../lib/libev/lib -lgko -lev -lgko_zip -lpthread
-all: client server
+LIBS= $(shell PKG_CONFIG_PATH=../lib/libgko/lib/pkgconfig pkg-config libgko --libs)
+CFLAGS= -g -O2 $(shell PKG_CONFIG_PATH=../lib/libgko/lib/pkgconfig pkg-config libgko --cflags)
+BINS = server client client2 ares_dns
+all: $(BINS)
 
 server:
-	g++ server.cpp -g -O0 $(INCLUDE_LIB_PATH) -o server
+	g++ $@.cpp -g -O0 $(CFLAGS) $(LIBS) -o $@
 	
 client:
-	g++ client.cpp -g -O0 $(INCLUDE_LIB_PATH) -o client
+	g++ $@.cpp -g -O0 $(CFLAGS) $(LIBS) -o $@
+
+client2:
+	g++ $@.cpp -g -O0 $(CFLAGS) $(LIBS) -o $@
+
+ares_dns:
+	g++ $@.cpp -g -O0 $(CFLAGS) $(LIBS) -o $@
+
+clean:
+	-rm -rf *.dSYM
+	-rm -f *.o
+	-rm -f $(BINS)
