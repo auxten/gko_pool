@@ -1,5 +1,5 @@
 /*
- * client.cpp
+ * server.cpp
  *
  *  Created on: May 18, 2012
  *      Author: auxten
