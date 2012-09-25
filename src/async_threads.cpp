@@ -62,7 +62,7 @@ int gko_pool::thread_worker_new(int id)
         return -1;
     }
 
-    dns_opt.flags = ARES_FLAG_PRIMARY; /// set while clean other flags
+    dns_opt.flags = 0;//ARES_FLAG_PRIMARY; /// set while clean other flags
     dns_ret = ares_init_options(&worker->dns_channel, &dns_opt, ARES_OPT_FLAGS);
     if (dns_ret != ARES_SUCCESS)
     {
@@ -242,7 +242,7 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     else if (client->type == active_conn)
     {
         client->state = conn_resolving;
-        GKOLOG(DEBUG, "conn_resolving");
+//        GKOLOG(DEBUG, "conn_resolving");
 
         Pool->nb_gethostbyname(client);
     }
@@ -476,7 +476,7 @@ enum aread_result gko_pool::aread(conn_client *c)
         }
 
         int avail = c->rbuf_size - c->have_read;
-        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, avail));
+        res = read(c->client_fd, c->read_buffer + c->have_read, MIN(c->need_read - c->have_read, (unsigned int)avail));
         if (res > 0)
         {
             c->have_read += res;
@@ -617,8 +617,8 @@ void gko_pool::state_machine(conn_client *c)
 //                break;
 
             case conn_connecting:
-                GKOLOG(DEBUG, "state: conn_connecting");
-                GKOLOG(DEBUG, "before nb_connect");
+//                GKOLOG(DEBUG, "state: conn_connecting");
+//                GKOLOG(DEBUG, "before nb_connect");
                 /// non-blocking connect
                 connect_ret = Pool->nb_connect(c);
                 if (connect_ret < 0)
@@ -649,11 +649,11 @@ void gko_pool::state_machine(conn_client *c)
                     break;
                 }
 
-                GKOLOG(DEBUG, "after nb_connect");
+//                GKOLOG(DEBUG, "after nb_connect");
                 break;
 
             case conn_waiting:
-                GKOLOG(DEBUG, "state: conn_waiting");
+//                GKOLOG(DEBUG, "state: conn_waiting");
                 if (!update_event(c, EV_READ | EV_PERSIST))
                 {
                     GKOLOG(WARNING, "Couldn't update event");
@@ -667,7 +667,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_read:
-                GKOLOG(DEBUG, "state: conn_read");
+//                GKOLOG(DEBUG, "state: conn_read");
                 res = aread(c);
 
                 switch (res)
@@ -699,7 +699,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_parse_header:
-                GKOLOG(DEBUG, "state: conn_parse_header");
+//                GKOLOG(DEBUG, "state: conn_parse_header");
                 parse_cmd_head(c->read_buffer, &proto_ver, &msg_len);
                 if (msg_len > 0)
                 {
@@ -735,7 +735,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_parse_cmd:     /**< try to parse a command from the input buffer */
-                GKOLOG(DEBUG, "state: conn_parse_cmd");
+//                GKOLOG(DEBUG, "state: conn_parse_cmd");
 
                 if (c->type == coming_conn)
                 {
@@ -757,9 +757,9 @@ void gko_pool::state_machine(conn_client *c)
                 else if (c->type == active_conn)
                 {
                     c->err_no = INVILID;
-                    if (Pool->reportHandler)
+                    if (Pool->g_server && Pool->g_server->on_data_callback)
                     {
-                        Pool->reportHandler(c, c->read_buffer + CMD_PREFIX_BYTE);
+                        Pool->g_server->on_data_callback((void *) c);
                     }
                     conn_set_state(c, conn_closing);
                     break;
@@ -772,12 +772,12 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_nread:         /**< reading in a fixed number of bytes */
-                GKOLOG(DEBUG, "state: conn_nread");
+//                GKOLOG(DEBUG, "state: conn_nread");
                 GKOLOG(FATAL, "NOT Supported yet :p");
                 break;
 
             case conn_write:
-                GKOLOG(DEBUG, "state: conn_write");
+//                GKOLOG(DEBUG, "state: conn_write");
                 c->__need_write = c->need_write + CMD_PREFIX_BYTE;
                 if (!c->have_write)
                     fill_cmd_head(c->__write_buffer, c->need_write);
@@ -820,13 +820,13 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_state_renew:
-                GKOLOG(DEBUG, "state: conn_state_reset");
+//                GKOLOG(DEBUG, "state: conn_state_reset");
                 Pool->conn_renew(c);
                 conn_set_state(c, conn_waiting);
                 break;
 
             case conn_mwrite:
-                GKOLOG(DEBUG, "state: conn_mwrite");
+//                GKOLOG(DEBUG, "state: conn_mwrite");
                 GKOLOG(FATAL, "NOT Supported yet :p");
                 break;
 
@@ -839,7 +839,7 @@ void gko_pool::state_machine(conn_client *c)
                 break;
 
             case conn_max_state:
-                GKOLOG(DEBUG, "state: conn_max_state");
+//                GKOLOG(DEBUG, "state: conn_max_state");
                 assert(false);
                 break;
 

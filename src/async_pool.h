@@ -25,6 +25,8 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <vector>
+
 #include "ares.h"
 #include "event.h"
 #include "memory.h"
@@ -96,7 +98,7 @@ struct conn_client
     time_t conn_time;
     func_t handle_client;
     struct event event;
-    struct event ev_dns;
+    std::vector<struct event *> ev_dns_vec;
     enum conn_states state;
     enum error_no err_no;
     enum conn_type type;
@@ -213,6 +215,7 @@ private:
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
 
     /// non-blocking DNS
+    static int del_dns_event(conn_client *c);
     static void dns_callback(void* arg, int status, int timeouts, struct hostent* host);
     static void dns_ev_callback(int fd, short ev, void *arg);
     void nb_gethostbyname(conn_client *c);
@@ -264,7 +267,8 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
+    int make_active_connect(const char * host, const int port, const long task_id,
+            const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
 
 };
 

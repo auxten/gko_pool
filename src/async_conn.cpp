@@ -277,7 +277,7 @@ struct conn_client * gko_pool::add_new_conn_client(int client_fd)
     struct conn_client *tmp = (struct conn_client *) NULL;
     /// Find a free slot
     id = conn_client_list_find_free();
-    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
+//    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
     if (id >= 0)
     {
         tmp = conn_client_list_get(id);
