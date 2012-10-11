@@ -66,6 +66,7 @@ void gko_pool::dns_ev_callback(int fd, short ev, void *arg)
         ares_process_fd(ch, ARES_SOCKET_BAD, fd);
     if (ev & EV_TIMEOUT)
     {
+        ares_process_fd(ch, fd, fd);
         c->err_no = DNS_RESOLVE_FAIL;
         conn_set_state(c, conn_closing);
         GKOLOG(FATAL, "dns timeout");

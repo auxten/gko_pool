@@ -19,6 +19,7 @@ enum error_no {
     PAUSE                   = 4,
     DELETED                 = 5,
     STOP                    = 6,
+    FINISHED                = 7,
 
     /// 失败原因
     ERROR                   = 10, /// 其它各种失败
