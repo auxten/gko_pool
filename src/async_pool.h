@@ -161,6 +161,10 @@ enum awrite_result {
     WRITE_ERROR            /** an error occured (on the socket) (or client closed connection) */
 };
 
+/// default HMTR handler for "0000000005HELLO" style msg
+int defaultHMTRHandler(void * p, const char * buf, const int len);
+
+
 class gko_pool
 {
 private:
@@ -183,6 +187,7 @@ private:
     s_option_t * option;
     ProcessHandler_t pHandler;
     ReportHandler_t reportHandler;
+    HMTRHandler_t HMTRHandler;
 
     static void conn_send_data(void *c);
     /// Accept new connection
@@ -211,7 +216,7 @@ private:
     /// non-blocking version connect
     int nb_connect(struct conn_client* conn);
     int connect_hosts(const std::vector<s_host_t> & host_vec,
-     std::vector<struct conn_client> * conn_vec);
+            std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
 
     /// non-blocking DNS
@@ -257,6 +262,7 @@ public:
 
     void setProcessHandler(ProcessHandler_t func_list);
     void setReportHandler(ReportHandler_t report_func);
+    void setHMTRHandler(HMTRHandler_t HMTR_func);
     int getPort() const;
     void setPort(int port);
     s_option_t *getOption() const;

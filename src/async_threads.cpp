@@ -18,11 +18,19 @@ void thread_worker::add_conn(int c_id)
 {
     this->conn_set.insert(c_id);
 }
+
 /// del conn from current thread conn_set
 void thread_worker::del_conn(int c_id)
 {
     this->conn_set.erase(c_id);
 }
+
+int defaultHMTRHandler(void * p, const char * buf, const int len)
+{
+
+    return 0;
+}
+
 
 /**
  * @brief create new thread worker
@@ -434,6 +442,7 @@ enum aread_result gko_pool::aread(conn_client *c)
 
     while (1)
     {
+        /// if hava_read == rbuf_size then realloc
         if (c->have_read >= c->rbuf_size) /// c->have_read > c->rbuf_size may not happen
         {
             if (num_allocs++ == 10)

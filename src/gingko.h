@@ -141,9 +141,9 @@ static const int        HELO_RETRY_INTERVAL =   3;
 /// join retry interval, in seconds
 static const int        JOIN_RETRY_INTERVAL =   3;
 /// bind port try interval, in useconds
-static const int        BIND_INTERVAL =         10000;
+static const useconds_t BIND_INTERVAL =         10000;
 /// gko.sig_flag check interval, in useconds
-static const int        CK_SIG_INTERVAL =       200000;
+static const useconds_t CK_SIG_INTERVAL =       200000;
 /// GKO_INT64 int char
 static const int        MAX_LONG_INT =          19;
 /// default at MacOS is 512k
@@ -338,6 +338,28 @@ typedef struct _s_job_t s_job_t;
 typedef void * (*func_t)(void *, int);
 typedef void * (*ProcessHandler_t)(void *);
 typedef void (*ReportHandler_t)(void *, const char *);
+
+/**
+ * @brief How Many Bytes to Read
+ *      set "How Many To Read" handler
+ *      the handler prototype is as:
+ *          int (*HMTRHandler_t)(void *, const char *, const int);
+ *      @ret:
+ *          n == 0  --> need read more
+ *          n > 0   --> need read n byte(s) in total, NOT n byte(s) more!!
+ *          n < 0   --> an error in the message
+ *      @args:
+ *          void *          --> <struct conn_client *> for the specified connection
+ *          const char *    --> the data already read
+ *          const int       --> the data count already read, in byte
+ *
+ *
+ * @see
+ * @note
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2012-9-29
+ **/
+typedef int (*HMTRHandler_t)(void *, const char *, const int);
 
 /// file structure
 typedef struct _s_file_t

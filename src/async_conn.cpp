@@ -554,7 +554,8 @@ gko_pool::gko_pool(const int pt)
         g_server(NULL),
         port(pt),
         pHandler(NULL),
-        reportHandler(NULL)
+        reportHandler(NULL),
+        HMTRHandler(defaultHMTRHandler)
 {
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
@@ -570,7 +571,8 @@ gko_pool::gko_pool()
         g_server(NULL),
         port(-1),
         pHandler(NULL),
-        reportHandler(NULL)
+        reportHandler(NULL),
+        HMTRHandler(defaultHMTRHandler)
 {
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
@@ -607,6 +609,33 @@ void gko_pool::setProcessHandler(ProcessHandler_t process_func)
 void gko_pool::setReportHandler(ReportHandler_t report_func)
 {
     this->reportHandler = report_func;
+}
+
+/**
+ * @brief
+ *      set "How Many To Read" handler
+ *
+ * @see
+ * @note
+ *      the handler prototype is as:
+ *          int (*HMTRHandler_t)(void *, const char *, const int);
+ *
+ *      @ret:
+ *          n == 0  --> need read more
+ *          n > 0   --> need read n byte(s) in total, NOT n byte(s) more!!
+ *          n < 0   --> an error in the message
+ *
+ *      @args:
+ *          void *          --> <struct conn_client *> for the specified connection
+ *          const char *    --> the data already read
+ *          const int       --> the data count already read, in byte
+ *
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2012-9-29
+ **/
+void gko_pool::setHMTRHandler(HMTRHandler_t HMTR_func)
+{
+    this->HMTRHandler = HMTR_func;
 }
 
 gko_pool *gko_pool::getInstance()
