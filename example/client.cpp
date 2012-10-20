@@ -9,7 +9,7 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 5000;
+int cnt = 50;
 int counter = 0;
 void report_result(void * c, const char * msg)
 {
@@ -25,7 +25,8 @@ void report_result(void * c, const char * msg)
 
 int main(int argc, char** argv)
 {
-    char cmd[] = "test cmd cmd cmdxxx";
+    char cmd[512];
+
     gko.opt.to_debug = 0;
     gko.ready_to_serv = 1;
     gko.sig_flag = 0;
@@ -41,8 +42,13 @@ int main(int argc, char** argv)
 
     int i = cnt;
     while (i--)
-        gingko->make_active_connect("baidu.com", 80, 1, 1, strlen(cmd), cmd);
-
+    {
+        sprintf(cmd, "GET /Poll.php?project_id=5168&id=49 HTTP/1.1\r\n"
+                "Host: hi.video.sina.com.cn\r\n"
+                "Accept: */*\r\n"
+                "Client-IP: %d.%d.%d.1\r\n\r\n", time(NULL) % 255,i % 255, i % 13);
+        gingko->make_active_connect("hi.video.sina.com.cn", 80, 1, 1, strlen(cmd), cmd, 0, 10);
+    }
     sleep(10);
     return 0;
 }

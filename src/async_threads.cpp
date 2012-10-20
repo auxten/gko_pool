@@ -729,7 +729,8 @@ void gko_pool::state_machine(conn_client *c)
                 }
                 else
                 {
-                    GKOLOG(WARNING, FLF("parse cmd head failed"));
+                    *(c->read_buffer + c->rbuf_size - 1) = '\0';
+                    GKOLOG(WARNING, "parse cmd head failed: %s", c->read_buffer);
                     if (c->type == active_conn)
                     {
                         c->err_no = DISPATCH_RECV_ERROR;
