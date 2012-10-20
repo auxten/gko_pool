@@ -148,7 +148,11 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
             }
         }
         fprintf(gko.log_fp, "%s\n", logstr);
-        //fflush(gko.log_fp);
+        if (usec_diff >= 1000000 ||
+                (counter % MAX_LOG_FLUSH_LINE == 0))
+        {
+            fflush(gko.log_fp);
+        }
         pthread_mutex_unlock(&g_logcut_lock);
 
         va_end(args);
