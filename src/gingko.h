@@ -151,7 +151,7 @@ static const int        MAX_LONG_INT =          19;
 /// default at MacOS is 512k
 static const int        MYSTACKSIZE =           (10 * 1024 * 1024);
 /// default server conn limit
-static const int        SERV_POOL_SIZE =        100000;
+static const int        SERV_POOL_SIZE =        200000;
 /// default client thread num
 static const int        SERV_ASYNC_THREAD_NUM = 16;
 /// default xor hash thread num

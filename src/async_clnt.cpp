@@ -77,8 +77,8 @@ int gko_pool::nb_connect(struct conn_client* conn)
     return sock;
 }
 
-int gko_pool::make_active_connect(const char * host, const int port, const long task_id,
-        const long sub_task_id, int len, const char * cmd, const u_int8_t flag, const int wrote)
+int gko_pool::make_active_connect(const char * host, const int port, int len, const char * cmd,
+        const long task_id, const long sub_task_id, const u_int8_t flag, const int wrote)
 {
     struct conn_client * conn;
 
@@ -119,7 +119,7 @@ int gko_pool::make_active_connect(const char * host, const int port, const long 
     if (wrote)
     {
         fill_cmd_head(conn->__write_buffer, len);
-        conn->need_read = 1500;
+//        conn->need_read = 1500;
     }
     thread_worker_dispatch(conn->id, conn->worker_id);
     return SUCC;

@@ -142,7 +142,7 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                 else if (conn->state == conn_write)
                 {
                     GKOLOG(NOTICE, "write income conn timeout, clean up");
-                    timeout_client_l.push_back(conn->id);;
+                    timeout_client_l.push_back(conn->id);
                     Pool->conn_client_free(conn);
                 }
             }
@@ -154,7 +154,7 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_RECV_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    timeout_client_l.push_back(conn->id);;
+                    timeout_client_l.push_back(conn->id);
                     Pool->conn_client_free(conn);
                 }
                 else if (conn->state == conn_write || conn->state == conn_connecting)
@@ -163,7 +163,17 @@ int gko_pool::clean_conn_timeout(thread_worker *worker, time_t now)
                     conn->err_no = DISPATCH_SEND_TIMEOUT;
                     if (reportHandler)
                         reportHandler(conn, "");
-                    timeout_client_l.push_back(conn->id);;
+                    timeout_client_l.push_back(conn->id);
+                    Pool->conn_client_free(conn);
+                }
+                else if (conn->state == conn_resolving)
+                {
+                    GKOLOG(NOTICE, "resolving active conn timeout, clean up");
+                    del_dns_event(conn);
+                    conn->err_no = DNS_RESOLVE_FAIL;
+                    if (reportHandler)
+                        reportHandler(conn, "");
+                    timeout_client_l.push_back(conn->id);
                     Pool->conn_client_free(conn);
                 }
             }
@@ -252,7 +262,8 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
         client->state = conn_resolving;
 //        GKOLOG(DEBUG, "conn_resolving");
 
-        Pool->nb_gethostbyname(client);
+        state_machine(client);
+//        Pool->nb_gethostbyname(client);
     }
 }
 
@@ -620,10 +631,11 @@ void gko_pool::state_machine(conn_client *c)
                 GKOLOG(WARNING, "listening state again?!");
                 break;
 
-//            case conn_resolving:
-//                GKOLOG(DEBUG, "state: conn_resolving");
-//                stop = true;
-//                break;
+            case conn_resolving:
+                GKOLOG(DEBUG, "state: conn_resolving");
+                Pool->nb_gethostbyname(c);
+                stop = true;
+                break;
 
             case conn_connecting:
 //                GKOLOG(DEBUG, "state: conn_connecting");
@@ -788,6 +800,13 @@ void gko_pool::state_machine(conn_client *c)
 
             case conn_write:
 //                GKOLOG(DEBUG, "state: conn_write");
+                if (c->__write_buffer == NULL)
+                {
+                    GKOLOG(FATAL, "__write_buffer is NULL, it's an issue");
+                    c->err_no = SERVER_INTERNAL_ERROR;
+                    conn_set_state(c, conn_closing);
+                    break;
+                }
                 c->__need_write = c->need_write + CMD_PREFIX_BYTE;
                 if (!c->have_write)
                     fill_cmd_head(c->__write_buffer, c->need_write);

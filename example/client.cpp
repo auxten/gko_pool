@@ -114,19 +114,19 @@ int main(int argc, char** argv)
         gettimeofday(&tv, NULL);
         long t = tv.tv_usec;
         sprintf(cmd,
-                "GET /Poll.php?project_id=5168&id=49 HTTP/1.%d\r\n"
-//                "GET /Poll.php?project_id=5168&id=80 HTTP/1.%d\r\n"
+                "GET /Poll.php?project_id=5168&id=49 HTTP/1.%ld\r\n"
+//                "GET /Poll.php?project_id=5168&id=80 HTTP/1.%ld\r\n"
                         "Host: hi.video.sina.com.cn\r\n"
                         "User-Agent: %s\r\n"
                         "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
                         "Accept-Language: zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3\r\n"
                         "DNT: 1\r\n"
-                        "Client-IP: %d.%d.%d.%d\r\n"
+                        "Client-IP: %ld.%ld.%ld.%ld\r\n"
                         "Connection: keep-alive\r\n"
                         "Referer: http://hi.video.sina.com.cn/you/2012banjiti/ph.php?dpc=1\r\n\r\n"
                 , t % 2,ua[t % 56], 122 + t % 20, 121 + (i + t) % 128, 24 + (i + t) % 135, 24 + (i + t) % 213);
-        gingko->make_active_connect(srv[i%2], 80, 1, 1, strlen(cmd), cmd, 0, 10);
-//        gingko->make_active_connect("61.30.127.2", 80, 1, 1, strlen(cmd), cmd, 0, 10);
+        gingko->make_active_connect(srv[i%2], 80, strlen(cmd), cmd, -1, -1, 0, 10);
+//        gingko->make_active_connect("61.30.127.2", 80, strlen(cmd), cmd, -1, -1, 0, 10);
     }
     sleep(10);
     return 0;

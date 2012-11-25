@@ -456,6 +456,9 @@ int gko_pool::conn_client_clear(struct conn_client *client)
 
         /// Delete event
         event_del(&client->event);
+
+        /// Delete DNS event
+        del_dns_event(client);
         /**
          * this is the flag of client usage,
          * we must put it in the last place

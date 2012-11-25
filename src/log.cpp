@@ -143,7 +143,7 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
                 if(! gko.log_fp)
                 {
                     perror("Cann't open log file");
-                    exit(1);
+                    _exit(1);
                 }
             }
         }

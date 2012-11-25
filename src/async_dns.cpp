@@ -59,6 +59,13 @@ void gko_pool::dns_ev_callback(int fd, short ev, void *arg)
     conn_client *c = (conn_client *) arg;
     thread_worker * w = *(Pool->g_worker_list + c->worker_id);
 
+    if (c->state == conn_closing)
+    {
+        GKOLOG(FATAL, "closing socket have DNS event");
+        del_dns_event(c);
+        state_machine(c);
+        return;
+    }
     ares_channel ch = w->dns_channel;
     if (ev & EV_READ)
         ares_process_fd(ch, fd, ARES_SOCKET_BAD);
@@ -79,7 +86,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
 {
     ares_socket_t *read_fds;
     ares_socket_t *write_fds;
-    struct timeval timeout = {5, 0};
+//    struct timeval timeout = {5, 0};
 
 //    gko_pool * Pool = gko_pool::getInstance();
     thread_worker * worker = *(g_worker_list + c->worker_id);
@@ -102,7 +109,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
         event_set(ev_tmp, *(read_fds + i), EV_READ | EV_PERSIST, dns_ev_callback,
                 (void *) (c));
         event_base_set(worker->ev_base, ev_tmp);
-        event_add(ev_tmp, &timeout);
+        event_add(ev_tmp, NULL);
 
         c->ev_dns_vec.push_back(ev_tmp);
     }
@@ -112,7 +119,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
         event_set(ev_tmp, *(write_fds + i), EV_WRITE | EV_PERSIST, dns_ev_callback,
                 (void *) (c));
         event_base_set(worker->ev_base, ev_tmp);
-        event_add(ev_tmp, &timeout);
+        event_add(ev_tmp, NULL);
 
         c->ev_dns_vec.push_back(ev_tmp);
     }
