@@ -257,6 +257,7 @@ libgko_a_include_HEADERS = \
 	$(srcdir)/log.h \
 	$(srcdir)/socket.h \
 	$(srcdir)/memory.h \
+	$(srcdir)/dict.h \
 	$(srcdir)/gko_errno.h
 
 pkgconfigdir = $(libdir)/pkgconfig

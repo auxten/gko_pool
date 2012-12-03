@@ -20,6 +20,8 @@ pthread_mutex_t gko_pool::instance_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t gko_pool::conn_list_lock = PTHREAD_MUTEX_INITIALIZER;
 /// init global thread list lock
 pthread_mutex_t gko_pool::thread_list_lock = PTHREAD_MUTEX_INITIALIZER;
+/// init global thread list lock
+pthread_mutex_t gko_pool::DNS_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 /// init gko_pool::gko_serv
 s_host_t gko_pool::gko_serv = {"\0", 0};
 
@@ -560,6 +562,7 @@ gko_pool::gko_pool(const int pt)
         reportHandler(NULL),
         HMTRHandler(defaultHMTRHandler)
 {
+    DNSDict = init_dns_cache();
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
     {
@@ -577,6 +580,7 @@ gko_pool::gko_pool()
         reportHandler(NULL),
         HMTRHandler(defaultHMTRHandler)
 {
+    DNSDict = init_dns_cache();
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
     {

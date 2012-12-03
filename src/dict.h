@@ -38,15 +38,23 @@
 #ifndef __DICT_H
 #define __DICT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DICT_OK 0
 #define DICT_ERR 1
 
 /* Unused arguments generate annoying warnings... */
 #define DICT_NOTUSED(V) ((void) V)
 
-typedef struct dictEntry {
+#define DICT_HASH_FUNCTION_SEED 5381;
+
+typedef struct dictEntry
+{
     void *key;
-    union {
+    union
+    {
         void *val;
         uint64_t u64;
         int64_t s64;
@@ -54,7 +62,8 @@ typedef struct dictEntry {
     struct dictEntry *next;
 } dictEntry;
 
-typedef struct dictType {
+typedef struct dictType
+{
     unsigned int (*hashFunction)(const void *key);
     void *(*keyDup)(void *privdata, const void *key);
     void *(*valDup)(void *privdata, const void *obj);
@@ -65,14 +74,16 @@ typedef struct dictType {
 
 /* This is our hash table structure. Every dictionary has two of this as we
  * implement incremental rehashing, for the old to the new table. */
-typedef struct dictht {
+typedef struct dictht
+{
     dictEntry **table;
     unsigned long size;
     unsigned long sizemask;
     unsigned long used;
 } dictht;
 
-typedef struct dict {
+typedef struct dict
+{
     dictType *type;
     void *privdata;
     dictht ht[2];
@@ -84,7 +95,8 @@ typedef struct dict {
  * dictAdd, dictFind, and other functions against the dictionary even while
  * iterating. Otherwise it is a non safe iterator, and only dictNext()
  * should be called while iterating. */
-typedef struct dictIterator {
+typedef struct dictIterator
+{
     dict *d;
     int table, index, safe;
     dictEntry *entry, *nextEntry;
@@ -169,5 +181,9 @@ unsigned int dictGetHashFunctionSeed(void);
 extern dictType dictTypeHeapStringCopyKey;
 extern dictType dictTypeHeapStrings;
 extern dictType dictTypeHeapStringCopyKeyValue;
+
+#ifdef __cplusplus
+}
+# endif
 
 #endif /* __DICT_H */

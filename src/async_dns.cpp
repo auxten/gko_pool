@@ -13,7 +13,114 @@
 
 #include "event.h"
 #include "ares.h"
+#include "dict.h"
 #include "gko.h"
+
+static const time_t        DNS_EXPIRE_TIME =           2 * 60 * 60;
+
+typedef struct DNSCacheVal
+{
+    time_t expire_time;
+    in_addr_t addr;
+} DNSCacheVal;
+
+/* And a case insensitive str hash function (based on dictGenCaseHashFunction hash) */
+unsigned int dictGenStrCaseHashFunction(const void *p)
+{
+    unsigned char *buf = (unsigned char *) p;
+    unsigned int hash = (unsigned int) DICT_HASH_FUNCTION_SEED;
+
+    while (*buf != '\0')
+        hash = ((hash << 5) + hash) + (tolower(*buf++)); /* hash * 33 + c */
+    return hash;
+}
+
+int dictStrCaseKeyCompare(void *privdata, const void *key1, const void *key2)
+{
+    DICT_NOTUSED(privdata);
+    return strcasecmp((const char *) key1, (const char *) key2) == 0;
+}
+
+void * strKeyDup(void *privdata, const void *key)
+{
+    DICT_NOTUSED(privdata);
+    return (void *) strdup((const char *) key);
+}
+
+void strKeyDestructor(void *privdata, void *key)
+{
+    DICT_NOTUSED(privdata);
+    free(key);
+}
+
+void strValDestructor(void *privdata, void *key)
+{
+    DICT_NOTUSED(privdata);
+    free(key);
+}
+
+dictType DNSDictType =
+    {
+        dictGenStrCaseHashFunction, /* hash function */
+        strKeyDup, /* key dup */
+        NULL, /* val dup */
+        dictStrCaseKeyCompare, /* key compare */
+        strKeyDestructor, /* key destructor */
+        strValDestructor /* val destructor */
+    };
+
+dict * gko_pool::init_dns_cache(void)
+{
+    return dictCreate(&DNSDictType, NULL);
+}
+
+/**
+ *  try if hostname hit the cache, so we save a query
+ * @param conn_client *
+ * @return if hit cache return 0, elsewise -1
+ */
+int gko_pool::try_dns_cache(conn_client *c)
+{
+    int ret;
+    DNSCacheVal *val;
+    time_t now = time(NULL);
+
+    pthread_mutex_lock(&DNS_cache_lock);
+    val = (DNSCacheVal *)dictFetchValue(DNSDict, c->client_hostname);
+    if (val != NULL)
+    {
+        /// hit !
+        if (val->expire_time < now)
+        {
+            /// TTL expire
+            dictDelete(DNSDict, c->client_hostname);
+            ret = -1;
+        }
+        else
+        {
+            /// within TTL
+            c->client_addr = val->addr;
+            ret = 0;
+        }
+    }
+    else
+    {
+        /// not hit
+        ret = -1;
+    }
+    pthread_mutex_unlock(&DNS_cache_lock);
+    return ret;
+}
+
+void gko_pool::update_dns_cache(conn_client *c, in_addr_t addr)
+{
+    pthread_mutex_lock(&DNS_cache_lock);
+    DNSCacheVal * val = (DNSCacheVal *)malloc(sizeof (DNSCacheVal));
+    val->addr = addr;
+    val->expire_time = time(NULL) + DNS_EXPIRE_TIME; ///
+    dictReplace(DNSDict, c->client_hostname, val);
+    pthread_mutex_unlock(&DNS_cache_lock);
+}
 
 int gko_pool::del_dns_event(conn_client *c)
 {
@@ -36,6 +143,7 @@ void gko_pool::dns_callback(void* arg, int status, int timeouts, struct hostent*
     {
         u_int32_t addr = *(in_addr_t *) host->h_addr;
         c->client_addr = addr;
+        gko_pool::getInstance()->update_dns_cache(c, addr);
         conn_set_state(c, conn_connecting);
         GKOLOG(DEBUG, "DNS OK %s ==> %u.%u.%u.%u",
                 host->h_name,
@@ -105,7 +213,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
 
     for (int i = 0; *(read_fds + i) != ARES_SOCKET_BAD; i++)
     {
-        struct event * ev_tmp = (struct event *)malloc(sizeof(struct event));
+        struct event * ev_tmp = (struct event *) malloc(sizeof(struct event));
         event_set(ev_tmp, *(read_fds + i), EV_READ | EV_PERSIST, dns_ev_callback,
                 (void *) (c));
         event_base_set(worker->ev_base, ev_tmp);
@@ -115,7 +223,7 @@ void gko_pool::nb_gethostbyname(conn_client *c)
     }
     for (int i = 0; *(write_fds + i) != ARES_SOCKET_BAD; i++)
     {
-        struct event * ev_tmp = (struct event *)malloc(sizeof(struct event));
+        struct event * ev_tmp = (struct event *) malloc(sizeof(struct event));
         event_set(ev_tmp, *(write_fds + i), EV_WRITE | EV_PERSIST, dns_ev_callback,
                 (void *) (c));
         event_base_set(worker->ev_base, ev_tmp);

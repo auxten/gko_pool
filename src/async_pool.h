@@ -30,6 +30,7 @@
 #include "ares.h"
 #include "event.h"
 #include "memory.h"
+#include "dict.h"
 
 #include "gko_errno.h"
 
@@ -75,6 +76,7 @@ enum conn_states {
 
     /// for client side
     conn_connecting = 101,
+    conn_dns_cache,     /**< try internal DNS cache */
     conn_resolving,     /**< resoving DNS */
 
     conn_max_state      /**< Max state value (used for assertion) */
@@ -173,6 +175,7 @@ private:
     static pthread_mutex_t instance_lock;
     static pthread_mutex_t conn_list_lock;
     static pthread_mutex_t thread_list_lock;
+    static pthread_mutex_t DNS_cache_lock;
 
     int g_curr_thread;
     int g_curr_conn;
@@ -188,6 +191,7 @@ private:
     ProcessHandler_t pHandler;
     ReportHandler_t reportHandler;
     HMTRHandler_t HMTRHandler;
+    dict * DNSDict;
 
     static void conn_send_data(void *c);
     /// Accept new connection
@@ -218,6 +222,12 @@ private:
     int connect_hosts(const std::vector<s_host_t> & host_vec,
             std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
+
+    /// DNS cache
+    dict * init_dns_cache(void);
+    int try_dns_cache(conn_client *c);
+    void update_dns_cache(conn_client *c, in_addr_t addr);
+
 
     /// non-blocking DNS
     static int del_dns_event(conn_client *c);

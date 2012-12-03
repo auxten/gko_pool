@@ -10,7 +10,7 @@
 s_gingko_global_t gko;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int cnt = 100;
+int cnt = 3;
 int counter = 0;
 void report_result(void * c, const char * msg)
 {
@@ -101,10 +101,11 @@ int main(int argc, char** argv)
     "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1",
     };
 
-    char srv[2][32] =
+    char srv[3][32] =
     {
         "202.108.43.189",
-        "202.106.182.237"
+        "202.106.182.237",
+        "home"
     };
 
     int i = cnt;
@@ -125,7 +126,7 @@ int main(int argc, char** argv)
                         "Connection: keep-alive\r\n"
                         "Referer: http://hi.video.sina.com.cn/you/2012banjiti/ph.php?dpc=1\r\n\r\n"
                 , t % 2,ua[t % 56], 122 + t % 20, 121 + (i + t) % 128, 24 + (i + t) % 135, 24 + (i + t) % 213);
-        gingko->make_active_connect(srv[i%2], 80, strlen(cmd), cmd, -1, -1, 0, 10);
+        gingko->make_active_connect(srv[i%3], 80, strlen(cmd), cmd, -1, -1, 0, 10);
 //        gingko->make_active_connect("61.30.127.2", 80, strlen(cmd), cmd, -1, -1, 0, 10);
     }
     sleep(10);

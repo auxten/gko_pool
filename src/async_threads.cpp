@@ -259,7 +259,7 @@ void gko_pool::thread_worker_process(int fd, short ev, void *arg)
     }
     else if (client->type == active_conn)
     {
-        client->state = conn_resolving;
+        client->state = conn_dns_cache;
 //        GKOLOG(DEBUG, "conn_resolving");
 
         state_machine(client);
@@ -630,6 +630,27 @@ void gko_pool::state_machine(conn_client *c)
                 GKOLOG(DEBUG, "state: conn_listening");
                 GKOLOG(WARNING, "listening state again?!");
                 break;
+
+            case conn_dns_cache:
+                GKOLOG(DEBUG, "state: conn_dns_cache");
+                if (Pool->try_dns_cache(c) == 0)
+                {
+                    /// DNS cache hit!!
+                    conn_set_state(c, conn_connecting);
+                    GKOLOG(DEBUG, "DNS cache OK %s ==> %u.%u.%u.%u",
+                            c->client_hostname,
+                            (c->client_addr) % 256, (c->client_addr >> 8) % 256,
+                            (c->client_addr >> 16) % 256, (c->client_addr >> 24) % 256);
+                    /// go connecting
+                    stop = false;
+                    break;
+                }
+                else
+                {
+                    /// DNS cache miss!!
+                    conn_set_state(c, conn_resolving);
+                    /// fall through
+                }
 
             case conn_resolving:
                 GKOLOG(DEBUG, "state: conn_resolving");
