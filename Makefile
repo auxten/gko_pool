@@ -1,8 +1,11 @@
 -include version_scmpf.env
 
-.PHONY: all makelib compile rm_config clean move check
-all: makelib compile
-	
+.PHONY: all makelib check_configure compile rm_config clean move check
+all: check_configure makelib compile
+
+check_configure:
+	if [ ! -x src/configure ];then ( cd src && ./autogen.sh );fi
+
 makelib:
 	cd lib && bash -x patch_build_all.sh && cd ..
 
