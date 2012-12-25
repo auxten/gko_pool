@@ -165,3 +165,13 @@ int lock_log(void)
 {
     return pthread_mutex_lock(&g_logcut_lock);
 }
+
+int unlock_log(void)
+{
+    return pthread_mutex_unlock(&g_logcut_lock);
+}
+
+int reinit_log_lock(void)
+{
+    return pthread_mutex_init(&g_logcut_lock, NULL);
+}

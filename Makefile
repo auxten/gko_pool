@@ -10,7 +10,7 @@ makelib:
 	cd lib && bash -x patch_build_all.sh && cd ..
 
 compile:
-	cd src && ./configure --enable-debug --prefix=$(shell pwd)/lib/libgko CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean && \
+	cd src && ./configure --enable-debug --prefix=$(shell pwd)/lib/libgko CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean ;sleep 1 &&\
 	make -j 4 && make install && cd ..
 
 rm_config:

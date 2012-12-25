@@ -39,5 +39,7 @@ static const u_int8_t DEBUG =     4;
 /// log handler
 void gko_log_flf(const u_int8_t log_level, const char *file, const int line, const char *func, const char *fmt, ...);
 int lock_log(void);
+int unlock_log(void);
+int reinit_log_lock(void);
 
 #endif /** LOG_H_ **/

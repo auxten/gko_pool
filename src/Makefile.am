@@ -25,7 +25,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libgko.pc
 
 
-DEFS+=-D_GNU_SOURCE -ggdb -funsigned-char -fPIC -DPIC
+DEFS+=-D_GNU_SOURCE -ggdb -funsigned-char -fPIC -DPIC -pipe
 libgko_a_SOURCES=async_threads.cpp async_conn.cpp async_clnt.cpp async_dns.cpp \
     gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c
 #libgko_a_LDFLAGS=-D_GNU_SOURCE -ggdb -funsigned-char
