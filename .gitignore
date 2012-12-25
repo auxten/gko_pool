@@ -1,3 +1,4 @@
+configure
 example/ares_dns
 lib/jemalloc
 lib/jemalloc-3.0.0/
