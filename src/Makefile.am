@@ -19,6 +19,7 @@ libgko_a_include_HEADERS = \
 	$(srcdir)/socket.h \
 	$(srcdir)/memory.h \
 	$(srcdir)/dict.h \
+	$(srcdir)/path.h \
 	$(srcdir)/gko_errno.h
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -27,5 +28,5 @@ pkgconfig_DATA = libgko.pc
 
 DEFS+=-D_GNU_SOURCE -ggdb -funsigned-char -fPIC -DPIC -pipe
 libgko_a_SOURCES=async_threads.cpp async_conn.cpp async_clnt.cpp async_dns.cpp \
-    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c
+    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c path.cpp
 #libgko_a_LDFLAGS=-D_GNU_SOURCE -ggdb -funsigned-char
