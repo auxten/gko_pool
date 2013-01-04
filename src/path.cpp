@@ -25,7 +25,7 @@ int inplace_strip_tailing_slash(char * path)
 {
     if (path == NULL)
     {
-        gko_log(WARNING, "passed NULL p");
+        GKOLOG(WARNING, "passed NULL p");
         return -1;
     }
     char * p = path;
@@ -57,7 +57,7 @@ int inplace_add_tailing_slash(char * path)
 {
     if (path == NULL)
     {
-        gko_log(WARNING, "passed NULL p");
+        GKOLOG(WARNING, "passed NULL p");
         return -1;
     }
     char * p = path;
@@ -99,7 +99,7 @@ int get_base_name_index(char * out, const char * in)
 {
     if (in == NULL)
     {
-        gko_log(WARNING, FLF("passed NULL p at get_base_name_index"));
+        GKOLOG(WARNING, FLF("passed NULL p at get_base_name_index"));
         return -1;
     }
     char * p = (char *) in;
@@ -107,7 +107,7 @@ int get_base_name_index(char * out, const char * in)
     int len = strlen(in);
     if (!len)
     {
-        gko_log(WARNING, FLF("input string len == 0"));
+        GKOLOG(WARNING, FLF("input string len == 0"));
         return -1;
     }
     for (i = len; i > 0; i--)
@@ -138,7 +138,7 @@ int merge_path(char * out, const char * dir_name, const char * base_name)
 {
     if (!out || !dir_name || !base_name)
     {
-        gko_log(WARNING, "passed NULL p");
+        GKOLOG(WARNING, "passed NULL p");
         return -1;
     }
     strncpy(out, dir_name, MAX_PATH_LEN);
@@ -147,7 +147,7 @@ int merge_path(char * out, const char * dir_name, const char * base_name)
     strncat(out, base_name, MAX_PATH_LEN - strlen(out));
     if (strlen(out) == MAX_PATH_LEN)
     {
-        gko_log(WARNING, "path too long");
+        GKOLOG(WARNING, "path too long");
         return -1;
     }
     return 0;
@@ -173,7 +173,7 @@ int change_to_local_path(char * path, const char * req_path,
 {
     if (!path || !req_path || !local_path)
     {
-        gko_log(FATAL, "%s %s passed NULL p", __FILE__, __func__);
+        GKOLOG(FATAL, "%s %s passed NULL p", __FILE__, __func__);
         return -1;
     }
     char base_name[MAX_PATH_LEN] = "\0";
@@ -194,7 +194,7 @@ int change_to_local_path(char * path, const char * req_path,
 
     if (d < 0)
     {
-        gko_log(FATAL, FLF("change_to_local_path failed"));
+        GKOLOG(FATAL, FLF("change_to_local_path failed"));
         return -1;
     }
     ///printf("d: %d,path+d: %s", d, tmp2+d);
@@ -218,12 +218,12 @@ GKO_STATIC_FUNC char * cwd_path_to_abs_path(char * abs_path, const char * oldpat
 {
     if (!abs_path || !oldpath)
     {
-        gko_log(FATAL, "%s %s passed NULL p", __FILE__, __func__);
+        GKOLOG(FATAL, "%s %s passed NULL p", __FILE__, __func__);
         return NULL;
     }
     if ((strlen(oldpath) < 1))
     {
-        gko_log(WARNING, "invalid oldpath");
+        GKOLOG(WARNING, "invalid oldpath");
         return NULL;
     }
     else
@@ -236,7 +236,7 @@ GKO_STATIC_FUNC char * cwd_path_to_abs_path(char * abs_path, const char * oldpat
         {
             if (!(getcwd(abs_path, MAX_PATH_LEN)))
             {
-                gko_log(WARNING, "getcwd error");
+                GKOLOG(WARNING, "getcwd error");
                 return NULL;
             }
             inplace_add_tailing_slash(abs_path);
@@ -258,7 +258,7 @@ char * symlink_dest_to_abs_path(char * abs_path, const char * symlink)
 {
     if (!abs_path || !symlink)
     {
-        gko_log(FATAL, "%s %s passed NULL p", __FILE__, __func__);
+        GKOLOG(FATAL, "%s %s passed NULL p", __FILE__, __func__);
         return NULL;
     }
 
@@ -266,14 +266,14 @@ char * symlink_dest_to_abs_path(char * abs_path, const char * symlink)
     /** read the symlink first **/
     if (readlink(symlink, abs_path, MAX_PATH_LEN) < 0)
     {
-        gko_log(WARNING, "read synlink '%s' dest failed", symlink);
+        GKOLOG(WARNING, "read synlink '%s' dest failed", symlink);
         return NULL;
     }
 
     /** if starts with a '/', that's it!! **/
     if (*abs_path == '/')
     {/** symlink to a abs path **/
-        gko_log(NOTICE, "symlink to a abs path:)");
+        GKOLOG(NOTICE, "symlink to a abs path:)");
         return abs_path;
     }
     else
@@ -282,14 +282,14 @@ char * symlink_dest_to_abs_path(char * abs_path, const char * symlink)
         strncpy(tmp_sympath, abs_path, MAX_PATH_LEN);
         if (!cwd_path_to_abs_path(abs_path, symlink))
         {
-            gko_log(WARNING, "cwd_path_to_abs_path failed '%s' '%s'", abs_path,
+            GKOLOG(WARNING, "cwd_path_to_abs_path failed '%s' '%s'", abs_path,
                     symlink);
             return NULL;
         }
         int idx = get_base_name_index(NULL, abs_path);
         if (idx < 0)
         {
-            gko_log(FATAL, "get_base_name_index failed: '%s'", abs_path);
+            GKOLOG(FATAL, "get_base_name_index failed: '%s'", abs_path);
             return NULL;
         }
         *(abs_path + idx) = '\0';
@@ -316,7 +316,7 @@ unsigned gen_snap_fpath(char *snap_fpath, const char * localpath,
 {
     if (!snap_fpath || !localpath || !uri)
     {
-        gko_log(FATAL, "%s %s passed NULL p", __FILE__, __func__);
+        GKOLOG(FATAL, "%s %s passed NULL p", __FILE__, __func__);
         return 0;
     }
 
@@ -326,7 +326,7 @@ unsigned gen_snap_fpath(char *snap_fpath, const char * localpath,
 
     if (!cwd_path_to_abs_path(snap_fpath, out_path))
     {
-        gko_log(WARNING, "cwd_path_to_abs_path failed '%s' '%s'", snap_fpath,
+        GKOLOG(WARNING, "cwd_path_to_abs_path failed '%s' '%s'", snap_fpath,
                 out_path);
         return 0;
     }
@@ -336,7 +336,7 @@ unsigned gen_snap_fpath(char *snap_fpath, const char * localpath,
         int idx;
         if ((idx = get_base_name_index(NULL, snap_fpath)) < 0)
         {
-            gko_log(WARNING, "gen_snap_fpath failed '%s' '%s' '%s'", snap_fpath,
+            GKOLOG(WARNING, "gen_snap_fpath failed '%s' '%s' '%s'", snap_fpath,
                     out_path, uri);
             return 0;
         }
@@ -348,7 +348,7 @@ unsigned gen_snap_fpath(char *snap_fpath, const char * localpath,
     snprintf(snap_fpath + snap_fpath_len, MAX_PATH_LEN - snap_fpath_len,
             "/%s%u", GKO_SNAP_FILE, uri_hash);
 
-    gko_log(NOTICE, "gko.snap_fpath: '%s'", snap_fpath);
+    GKOLOG(NOTICE, "gko.snap_fpath: '%s'", snap_fpath);
     return uri_hash;
 }
 
@@ -374,7 +374,7 @@ int path_type(const char * p)
 {
     if (!p)
     {
-        gko_log(FATAL, FLF("null passed to path_type"));
+        GKOLOG(FATAL, FLF("null passed to path_type"));
         return GKO_ERR;
     }
     struct stat dest_stat;
@@ -385,10 +385,10 @@ int path_type(const char * p)
     {
         if (errno == ENOENT)
         {
-            gko_log(NOTICE, "non existed path '%s'", path);
+            GKOLOG(NOTICE, "non existed path '%s'", path);
             return GKO_NONE;
         }
-        gko_log(WARNING, "stat dest_stat failed %d", errno);
+        GKOLOG(WARNING, "stat dest_stat failed %d", errno);
         return GKO_ERR;
     }
     else
@@ -408,10 +408,10 @@ int path_type(const char * p)
                 {
                     if (errno == ENOENT)
                     {
-                        gko_log(WARNING, "non existed sympath '%s'", path);
+                        GKOLOG(WARNING, "non existed sympath '%s'", path);
                         return GKO_LNONE;
                     }
-                    gko_log(WARNING, "stat symstat failed %d", errno);
+                    GKOLOG(WARNING, "stat symstat failed %d", errno);
                     return GKO_ERR;
                 }
                 else
@@ -425,7 +425,7 @@ int path_type(const char * p)
                             return GKO_LDIR;
 
                         default:
-                            gko_log(WARNING,
+                            GKOLOG(WARNING,
                                     "symbol path '%s' not a regular file or dir",
                                     path);
                             return GKO_LOTHR;
@@ -435,7 +435,7 @@ int path_type(const char * p)
             }
 
             default:
-                gko_log(WARNING, "'%s' not a regular file or dir", path);
+                GKOLOG(WARNING, "'%s' not a regular file or dir", path);
                 return GKO_OTHR;
         }
     }
@@ -458,7 +458,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
 {
     if (!jo || !to_continue)
     {
-        gko_log(FATAL, FLF("null pointer"));
+        GKOLOG(FATAL, FLF("null pointer"));
         return -1;
     }
     s_file_t * tmp;
@@ -466,7 +466,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
     {
         tmp = jo->files + i;
         int fd = -1;
-        gko_log(NOTICE, "0%3o\t%lld\t%s\t%s", tmp->mode & 0777, tmp->size,
+        GKOLOG(NOTICE, "0%3o\t%lld\t%s\t%s", tmp->mode & 0777, tmp->size,
                 (jo->files + i)->name, tmp->sympath);
         switch (tmp->size)
         {
@@ -478,7 +478,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
             case -1: /// dir
                 if (mkdir(tmp->name, tmp->mode|S_IWUSR) && errno != EEXIST)
                 {
-                    gko_log(FATAL, "mkdir error");
+                    GKOLOG(FATAL, "mkdir error");
                     return -1;
                 }
                 break;
@@ -490,18 +490,18 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
                     {
                         if (unlink(tmp->name))
                         {
-                            gko_log(FATAL, "unlink existed symlink '%s' error",
+                            GKOLOG(FATAL, "unlink existed symlink '%s' error",
                                     tmp->name);
                         }
                         if (symlink(tmp->sympath, tmp->name))
                         {
-                            gko_log(FATAL, "re-create symlink '%s' to '%s' error",
+                            GKOLOG(FATAL, "re-create symlink '%s' to '%s' error",
                                     tmp->name, tmp->sympath);
                         }
                     }
                     else
                     {
-                        gko_log(FATAL, "symlink error");
+                        GKOLOG(FATAL, "symlink error");
                         return -1;
                     }
                 }
@@ -510,7 +510,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
             default: ///regular file
                 if (-1 == (fd = open(tmp->name, CREATE_OPEN_FLAG, tmp->mode|S_IWUSR)))
                 {
-                    gko_log(FATAL, "make or open new file error");
+                    GKOLOG(FATAL, "make or open new file error");
                     return -1;
                 }
                 else
@@ -523,7 +523,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
                     {
                         if (fstat(fd, &f_stat))
                         {
-                            gko_log(
+                            GKOLOG(
                                     WARNING,
                                     "fstat file '%s' error, continue flag canceled",
                                     tmp->name);
@@ -531,7 +531,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
                         }
                         if (f_stat.st_size != tmp->size)
                         {
-                            gko_log(
+                            GKOLOG(
                                     WARNING,
                                     "file '%s' size not matched, continue flag canceled",
                                     tmp->name);
@@ -540,7 +540,7 @@ int mk_dir_symlink_file(s_job_t * jo, char * to_continue)
                     }
                     if (ftruncate(fd, tmp->size))
                     {
-                        gko_log(FATAL, "truncate file error");
+                        GKOLOG(FATAL, "truncate file error");
                         close(fd);
                         return -1;
                     }
@@ -571,11 +571,11 @@ int correct_mode(s_job_t * jo)
         {
             if (chmod(f_p->name, f_p->mode))
             {
-                gko_log(FATAL, "chmod for '%s' to 0%3o failed!!!", f_p->name,
+                GKOLOG(FATAL, "chmod for '%s' to 0%3o failed!!!", f_p->name,
                         f_p->mode & 0777);
                 return -1;
             }
-            gko_log(TRACE, "chmod for '%s' to 0%3o succeed", f_p->name,
+            GKOLOG(TRACE, "chmod for '%s' to 0%3o succeed", f_p->name,
                     f_p->mode & 0777);
         }
     }
@@ -600,14 +600,14 @@ int process_path(s_job_t * jo)
     {/** non-existed dest or dest is symlink to non-existed **/
         if (out_type & GKO_LINK)
         {/** dest is symlink to non-existed **/
-            gko_log(FATAL, "destination: '%s' is a symlink to non-exist",
+            GKOLOG(FATAL, "destination: '%s' is a symlink to non-exist",
                     out_path);
             return -1;
         }
         else if ((jo->file_count == 1 && jo->files->size >= 0) &&
                 (jo->path)[strlen(jo->path) - 1] == '/')
         {/** dest is a non existed dir path like './non/' but job is a singal file **/
-            gko_log(FATAL, "downloading a file to non existed path '%s'",
+            GKOLOG(FATAL, "downloading a file to non existed path '%s'",
                     jo->path);
             return -1;
         }
@@ -621,7 +621,7 @@ int process_path(s_job_t * jo)
             int base_idx = get_base_name_index(NULL, out_base_path);
             if (base_idx < 0)
             {
-                gko_log(FATAL, "process_path failed");
+                GKOLOG(FATAL, "process_path failed");
                 return -1;
             }
             out_base_path[base_idx] = '\0';
@@ -633,19 +633,19 @@ int process_path(s_job_t * jo)
                     if (FAIL_CHECK(
                             change_to_local_path((jo->files + i)->name, jo->uri, out_path, 0)))
                     {
-                        gko_log(
+                        GKOLOG(
                                 FATAL,
                                 "change to local path error, name: '%s', uri: '%s', path: '%s'",
                                 (jo->files + i)->name, jo->uri, out_path);
                         return -1;
                     }
-                    //gko_log(NOTICE, "path: '%s'", (jo->files + i)->name);
+                    //GKOLOG(NOTICE, "path: '%s'", (jo->files + i)->name);
                 }
                 return 0;
             }
             else
             {/** out base path is not dir, nor symlink to dir **/
-                gko_log(FATAL, "base path: '%s' is non-dir", out_base_path);
+                GKOLOG(FATAL, "base path: '%s' is non-dir", out_base_path);
                 return -1;
             }
         }
@@ -658,13 +658,13 @@ int process_path(s_job_t * jo)
             {
                 if ((jo->files)->size == -1)
                 {/** dest path is dir **/
-                    gko_log(FATAL, "can't overwrite dir: '%s' on file: '%s'",
+                    GKOLOG(FATAL, "can't overwrite dir: '%s' on file: '%s'",
                             (jo->files)->name, out_path);
                     return -1;
                 }
                 else if ((jo->files)->size == -2)
                 {/** dest path is symlink **/
-                    gko_log(FATAL, "can't overwrite symlink: '%s' on file: '%s'",
+                    GKOLOG(FATAL, "can't overwrite symlink: '%s' on file: '%s'",
                             (jo->files)->name, out_path);
                     return -1;
                 }
@@ -677,7 +677,7 @@ int process_path(s_job_t * jo)
             else
             { /** file count != 1,
                 indicating that job is a dir, dest is a existed file **/
-                gko_log(FATAL, "can't overwrite dir: '%s' on file: '%s'",
+                GKOLOG(FATAL, "can't overwrite dir: '%s' on file: '%s'",
                         (jo->files)->name, out_path);
                 return -1;
             }
@@ -688,7 +688,7 @@ int process_path(s_job_t * jo)
             {
                 if (FAIL_CHECK(change_to_local_path((jo->files + i)->name, jo->uri, out_path, 1)))
                 {
-                    gko_log(
+                    GKOLOG(
                             FATAL,
                             "change to local path error, name: '%s', uri: '%s', path: '%s'",
                             (jo->files + i)->name, jo->uri, out_path);
@@ -699,7 +699,7 @@ int process_path(s_job_t * jo)
         }
         else
         {/** dest is non-regular file or dir **/
-            gko_log(FATAL, "the dest: '%s' is non-regular file or dir", out_path);
+            GKOLOG(FATAL, "the dest: '%s' is non-regular file or dir", out_path);
             return -1;
         }
     }

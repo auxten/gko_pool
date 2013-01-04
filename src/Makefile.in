@@ -103,7 +103,9 @@ libgko_a_LIBADD =
 am_libgko_a_OBJECTS = async_threads.$(OBJEXT) async_conn.$(OBJEXT) \
 	async_clnt.$(OBJEXT) async_dns.$(OBJEXT) gingko_base.$(OBJEXT) \
 	log.$(OBJEXT) socket.$(OBJEXT) limit.$(OBJEXT) \
-	memory.$(OBJEXT) dict.$(OBJEXT)
+	memory.$(OBJEXT) dict.$(OBJEXT) path.$(OBJEXT) \
+	gko_zip.$(OBJEXT) lz4.$(OBJEXT) md5.$(OBJEXT) \
+	xor_hash.$(OBJEXT)
 libgko_a_OBJECTS = $(am_libgko_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -258,12 +260,18 @@ libgko_a_include_HEADERS = \
 	$(srcdir)/socket.h \
 	$(srcdir)/memory.h \
 	$(srcdir)/dict.h \
+	$(srcdir)/path.h \
+	$(srcdir)/hash/gko_zip.h \
+	$(srcdir)/hash/lz4.h \
+	$(srcdir)/hash/md5.h \
+	$(srcdir)/hash/xor_hash.h \
 	$(srcdir)/gko_errno.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libgko.pc
 libgko_a_SOURCES = async_threads.cpp async_conn.cpp async_clnt.cpp async_dns.cpp \
-    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c
+    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c path.cpp \
+    hash/gko_zip.cpp hash/lz4.cpp hash/md5.cpp hash/xor_hash.cpp 
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -369,10 +377,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dict.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gingko_base.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gko_zip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/limit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lz4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xor_hash.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -401,6 +414,62 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+gko_zip.o: hash/gko_zip.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT gko_zip.o -MD -MP -MF $(DEPDIR)/gko_zip.Tpo -c -o gko_zip.o `test -f 'hash/gko_zip.cpp' || echo '$(srcdir)/'`hash/gko_zip.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/gko_zip.Tpo $(DEPDIR)/gko_zip.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/gko_zip.cpp' object='gko_zip.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o gko_zip.o `test -f 'hash/gko_zip.cpp' || echo '$(srcdir)/'`hash/gko_zip.cpp
+
+gko_zip.obj: hash/gko_zip.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT gko_zip.obj -MD -MP -MF $(DEPDIR)/gko_zip.Tpo -c -o gko_zip.obj `if test -f 'hash/gko_zip.cpp'; then $(CYGPATH_W) 'hash/gko_zip.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/gko_zip.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/gko_zip.Tpo $(DEPDIR)/gko_zip.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/gko_zip.cpp' object='gko_zip.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o gko_zip.obj `if test -f 'hash/gko_zip.cpp'; then $(CYGPATH_W) 'hash/gko_zip.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/gko_zip.cpp'; fi`
+
+lz4.o: hash/lz4.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lz4.o -MD -MP -MF $(DEPDIR)/lz4.Tpo -c -o lz4.o `test -f 'hash/lz4.cpp' || echo '$(srcdir)/'`hash/lz4.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/lz4.Tpo $(DEPDIR)/lz4.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/lz4.cpp' object='lz4.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lz4.o `test -f 'hash/lz4.cpp' || echo '$(srcdir)/'`hash/lz4.cpp
+
+lz4.obj: hash/lz4.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lz4.obj -MD -MP -MF $(DEPDIR)/lz4.Tpo -c -o lz4.obj `if test -f 'hash/lz4.cpp'; then $(CYGPATH_W) 'hash/lz4.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/lz4.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/lz4.Tpo $(DEPDIR)/lz4.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/lz4.cpp' object='lz4.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lz4.obj `if test -f 'hash/lz4.cpp'; then $(CYGPATH_W) 'hash/lz4.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/lz4.cpp'; fi`
+
+md5.o: hash/md5.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md5.o -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.o `test -f 'hash/md5.cpp' || echo '$(srcdir)/'`hash/md5.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/md5.cpp' object='md5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.o `test -f 'hash/md5.cpp' || echo '$(srcdir)/'`hash/md5.cpp
+
+md5.obj: hash/md5.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md5.obj -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.obj `if test -f 'hash/md5.cpp'; then $(CYGPATH_W) 'hash/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/md5.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/md5.cpp' object='md5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md5.obj `if test -f 'hash/md5.cpp'; then $(CYGPATH_W) 'hash/md5.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/md5.cpp'; fi`
+
+xor_hash.o: hash/xor_hash.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xor_hash.o -MD -MP -MF $(DEPDIR)/xor_hash.Tpo -c -o xor_hash.o `test -f 'hash/xor_hash.cpp' || echo '$(srcdir)/'`hash/xor_hash.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/xor_hash.Tpo $(DEPDIR)/xor_hash.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/xor_hash.cpp' object='xor_hash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xor_hash.o `test -f 'hash/xor_hash.cpp' || echo '$(srcdir)/'`hash/xor_hash.cpp
+
+xor_hash.obj: hash/xor_hash.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xor_hash.obj -MD -MP -MF $(DEPDIR)/xor_hash.Tpo -c -o xor_hash.obj `if test -f 'hash/xor_hash.cpp'; then $(CYGPATH_W) 'hash/xor_hash.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/xor_hash.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/xor_hash.Tpo $(DEPDIR)/xor_hash.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='hash/xor_hash.cpp' object='xor_hash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xor_hash.obj `if test -f 'hash/xor_hash.cpp'; then $(CYGPATH_W) 'hash/xor_hash.cpp'; else $(CYGPATH_W) '$(srcdir)/hash/xor_hash.cpp'; fi`
 install-pkgconfigDATA: $(pkgconfig_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \

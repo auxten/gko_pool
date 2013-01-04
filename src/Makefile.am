@@ -20,6 +20,10 @@ libgko_a_include_HEADERS = \
 	$(srcdir)/memory.h \
 	$(srcdir)/dict.h \
 	$(srcdir)/path.h \
+	$(srcdir)/hash/gko_zip.h \
+	$(srcdir)/hash/lz4.h \
+	$(srcdir)/hash/md5.h \
+	$(srcdir)/hash/xor_hash.h \
 	$(srcdir)/gko_errno.h
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -28,5 +32,6 @@ pkgconfig_DATA = libgko.pc
 
 DEFS+=-D_GNU_SOURCE -ggdb -funsigned-char -fPIC -DPIC -pipe
 libgko_a_SOURCES=async_threads.cpp async_conn.cpp async_clnt.cpp async_dns.cpp \
-    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c path.cpp
+    gingko_base.cpp log.cpp socket.cpp limit.cpp memory.cpp dict.c path.cpp \
+    hash/gko_zip.cpp hash/lz4.cpp hash/md5.cpp hash/xor_hash.cpp 
 #libgko_a_LDFLAGS=-D_GNU_SOURCE -ggdb -funsigned-char
