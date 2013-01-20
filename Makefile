@@ -1,13 +1,16 @@
 -include version_scmpf.env
 
-.PHONY: all makelib compile rm_config clean move check
-all: makelib compile
-	
+.PHONY: all makelib check_configure compile rm_config clean move check
+all: check_configure makelib compile
+
+check_configure:
+	if [ ! -x src/configure ];then ( cd src && ./autogen.sh );fi
+
 makelib:
 	cd lib && bash -x patch_build_all.sh && cd ..
 
 compile:
-	cd src && ./configure --prefix=$(shell pwd)/lib/libgko CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean && \
+	cd src && ./configure --enable-debug --prefix=$(shell pwd)/lib/libgko CXXFLAGS='-DNDEBUG -ggdb -D_GKO_VERSION=\"$(subst VERSION:,,$(VERSION_SCMPF))\"' && make clean ;sleep 1 &&\
 	make -j 4 && make install && cd ..
 
 rm_config:

@@ -22,8 +22,8 @@
 
 char * addr_itoa(in_addr_t address, char * str)
 {
-    u_int32_t addr = (u_int32_t)address;
-    snprintf(str, 16,"%u.%u.%u.%u", (addr) & 255u, (addr >> 8) & 255u, (addr >> 16) & 255u, (addr >> 24) & 255u);
+    u_int32_t addr = (u_int32_t) address;
+    snprintf(str, 16, "%u.%u.%u.%u", (addr) & 255u, (addr >> 8) & 255u, (addr >> 16) & 255u, (addr >> 24) & 255u);
     return str;
 }
 

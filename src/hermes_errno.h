@@ -14,6 +14,12 @@ enum error_no {
     INVILID                 = -1,
     SUCC                    = 0,
     FAIL                    = 1,
+    ING                     = 2, /// doing something.
+    RESUME                  = 3,
+    PAUSE                   = 4,
+    DELETED                 = 5,
+    STOP                    = 6,
+    FINISHED                = 7,
 
     /// 失败原因
     ERROR                   = 10, /// 其它各种失败
@@ -35,6 +41,7 @@ enum error_no {
     ////以上不要直接使用
 
     /// 任务分发结果
+    DISPATCH_ING            = DISPATCH + ING,               /// 正在分发任务
     DISPATCH_SUCC           = DISPATCH + SUCC,
     DISPATCH_SEND_TIMEOUT   = DISPATCH + SEND_TIMEOUT + FAIL, /// 网络发送超时
     DISPATCH_RECV_TIMEOUT   = DISPATCH + RECV_TIMEOUT + FAIL, /// 发送任务获取agent收到确认超时

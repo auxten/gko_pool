@@ -93,7 +93,7 @@ int gkoAlloc::get_block(void)
         the_bucket = (latest_bucket + i) % BUCKET_COUNT;
         if (bucket_used[the_bucket] < BUCKET_CAPACITY)
         {
-            latest_bucket = the_bucket;
+//            latest_bucket = the_bucket;
             break;
         }
     }
@@ -101,7 +101,7 @@ int gkoAlloc::get_block(void)
     if (i == BUCKET_COUNT)
     {
         fprintf(stderr, "out of memory in pool\n");
-//        GKOLOG(FATAL, "out of memory in pool");
+        GKOLOG(FATAL, "out of memory in pool");
         idx = INVILID_BLOCK;
         goto GET_BLOCK_RET;
     }

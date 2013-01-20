@@ -147,12 +147,16 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
                 if(! gko.log_fp)
                 {
                     perror("Cann't open log file");
-                    exit(1);
+                    _exit(1);
                 }
             }
         }
         fprintf(gko.log_fp, "%s\n", logstr);
-        //fflush(gko.log_fp);
+        if (usec_diff >= 1000000 ||
+                (counter % MAX_LOG_FLUSH_LINE == 0))
+        {
+            fflush(gko.log_fp);
+        }
         pthread_mutex_unlock(&g_logcut_lock);
 
         va_end(args);
@@ -164,4 +168,14 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
 int lock_log(void)
 {
     return pthread_mutex_lock(&g_logcut_lock);
+}
+
+int unlock_log(void)
+{
+    return pthread_mutex_unlock(&g_logcut_lock);
+}
+
+int reinit_log_lock(void)
+{
+    return pthread_mutex_init(&g_logcut_lock, NULL);
 }

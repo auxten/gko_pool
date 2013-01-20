@@ -25,9 +25,12 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <vector>
+
 #include "ares.h"
 #include "event.h"
 #include "memory.h"
+#include "dict.h"
 
 #include "gko_errno.h"
 
@@ -73,6 +76,7 @@ enum conn_states {
 
     /// for client side
     conn_connecting = 101,
+    conn_dns_cache,     /**< try internal DNS cache */
     conn_resolving,     /**< resoving DNS */
 
     conn_max_state      /**< Max state value (used for assertion) */
@@ -96,7 +100,7 @@ struct conn_client
     time_t conn_time;
     func_t handle_client;
     struct event event;
-    struct event ev_dns;
+    std::vector<struct event *> ev_dns_vec;
     enum conn_states state;
     enum error_no err_no;
     enum conn_type type;
@@ -159,6 +163,10 @@ enum awrite_result {
     WRITE_ERROR            /** an error occured (on the socket) (or client closed connection) */
 };
 
+/// default HMTR handler for "0000000005HELLO" style msg
+int defaultHMTRHandler(void * p, const char * buf, const int len);
+
+
 class gko_pool
 {
 private:
@@ -167,6 +175,7 @@ private:
     static pthread_mutex_t instance_lock;
     static pthread_mutex_t conn_list_lock;
     static pthread_mutex_t thread_list_lock;
+    static pthread_mutex_t DNS_cache_lock;
 
     int g_curr_thread;
     int g_curr_conn;
@@ -181,6 +190,8 @@ private:
     s_option_t * option;
     ProcessHandler_t pHandler;
     ReportHandler_t reportHandler;
+    HMTRHandler_t HMTRHandler;
+    dict * DNSDict;
 
     static void conn_send_data(void *c);
     /// Accept new connection
@@ -209,10 +220,17 @@ private:
     /// non-blocking version connect
     int nb_connect(struct conn_client* conn);
     int connect_hosts(const std::vector<s_host_t> & host_vec,
-     std::vector<struct conn_client> * conn_vec);
+            std::vector<struct conn_client> * conn_vec);
     int disconnect_hosts(std::vector<struct conn_client> & conn_vec);
 
+    /// DNS cache
+    dict * init_dns_cache(void);
+    int try_dns_cache(conn_client *c);
+    void update_dns_cache(conn_client *c, in_addr_t addr);
+
+
     /// non-blocking DNS
+    static int del_dns_event(conn_client *c);
     static void dns_callback(void* arg, int status, int timeouts, struct hostent* host);
     static void dns_ev_callback(int fd, short ev, void *arg);
     void nb_gethostbyname(conn_client *c);
@@ -254,6 +272,7 @@ public:
 
     void setProcessHandler(ProcessHandler_t func_list);
     void setReportHandler(ReportHandler_t report_func);
+    void setHMTRHandler(HMTRHandler_t HMTR_func);
     int getPort() const;
     void setPort(int port);
     s_option_t *getOption() const;
@@ -264,7 +283,9 @@ public:
     int gko_run();
     int gko_loopexit(int timeout);
 
-    int make_active_connect(const char * host, const int port, const long task_id, const long sub_task_id, int len, const char * cmd, const u_int8_t flag = 0);
+    int make_active_connect(const char * host, const int port, int len, const char * cmd,
+            const long task_id = -1, const long sub_task_id = -1,
+            const u_int8_t flag = 0, const int wrote = 0);
 
 };
 

@@ -20,6 +20,8 @@ pthread_mutex_t gko_pool::instance_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t gko_pool::conn_list_lock = PTHREAD_MUTEX_INITIALIZER;
 /// init global thread list lock
 pthread_mutex_t gko_pool::thread_list_lock = PTHREAD_MUTEX_INITIALIZER;
+/// init global thread list lock
+pthread_mutex_t gko_pool::DNS_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 /// init gko_pool::gko_serv
 s_host_t gko_pool::gko_serv = {"\0", 0};
 
@@ -277,7 +279,7 @@ struct conn_client * gko_pool::add_new_conn_client(int client_fd)
     struct conn_client *tmp = (struct conn_client *) NULL;
     /// Find a free slot
     id = conn_client_list_find_free();
-    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
+//    GKOLOG(DEBUG, "add_new_conn_client id %d",id);///test
     if (id >= 0)
     {
         tmp = conn_client_list_get(id);
@@ -456,6 +458,9 @@ int gko_pool::conn_client_clear(struct conn_client *client)
 
         /// Delete event
         event_del(&client->event);
+
+        /// Delete DNS event
+        del_dns_event(client);
         /**
          * this is the flag of client usage,
          * we must put it in the last place
@@ -554,8 +559,10 @@ gko_pool::gko_pool(const int pt)
         g_server(NULL),
         port(pt),
         pHandler(NULL),
-        reportHandler(NULL)
+        reportHandler(NULL),
+        HMTRHandler(defaultHMTRHandler)
 {
+    DNSDict = init_dns_cache();
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
     {
@@ -570,8 +577,10 @@ gko_pool::gko_pool()
         g_server(NULL),
         port(-1),
         pHandler(NULL),
-        reportHandler(NULL)
+        reportHandler(NULL),
+        HMTRHandler(defaultHMTRHandler)
 {
+    DNSDict = init_dns_cache();
     g_ev_base = (struct event_base*)event_init();
     if (!g_ev_base)
     {
@@ -607,6 +616,33 @@ void gko_pool::setProcessHandler(ProcessHandler_t process_func)
 void gko_pool::setReportHandler(ReportHandler_t report_func)
 {
     this->reportHandler = report_func;
+}
+
+/**
+ * @brief
+ *      set "How Many To Read" handler
+ *
+ * @see
+ * @note
+ *      the handler prototype is as:
+ *          int (*HMTRHandler_t)(void *, const char *, const int);
+ *
+ *      @ret:
+ *          n == 0  --> need read more
+ *          n > 0   --> need read n byte(s) in total, NOT n byte(s) more!!
+ *          n < 0   --> an error in the message
+ *
+ *      @args:
+ *          void *          --> <struct conn_client *> for the specified connection
+ *          const char *    --> the data already read
+ *          const int       --> the data count already read, in byte
+ *
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2012-9-29
+ **/
+void gko_pool::setHMTRHandler(HMTRHandler_t HMTR_func)
+{
+    this->HMTRHandler = HMTR_func;
 }
 
 gko_pool *gko_pool::getInstance()

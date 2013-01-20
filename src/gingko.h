@@ -88,8 +88,6 @@ static const int        MAX_REQ_SERV_BLOCKS =   5;
 static const int        MAX_REQ_CLNT_BLOCKS =   300;
 /// just like ZERO :p
 static const int        SERV_PORT =             2120;
-/// agent default port
-static const int        AGENT_PORT =            3000;
 /// indicate random port
 static const int        RANDOM_PORT =           -1;
 /// tcp buffer size
@@ -110,10 +108,12 @@ static const int        MAX_LIS_PORT =          60000;
 static const int        MAX_PACKET_LEN =        65536;
 /// for global locks
 static const int        MAX_JOBS =              1024;
+/// max log line count flush log
+static const GKO_INT64  MAX_LOG_FLUSH_LINE =    10;
 /// max log line count to reopen log file, in case of file mv
-static const GKO_INT64  MAX_LOG_REOPEN_LINE =   100000;
+static const GKO_INT64  MAX_LOG_REOPEN_LINE =   1000;
 /// max log line count
-static const GKO_INT64  MAX_LOG_LINE =          (100000 * MAX_LOG_REOPEN_LINE);
+static const GKO_INT64  MAX_LOG_LINE =          (10000 * MAX_LOG_REOPEN_LINE);
 /// max log bytes per line
 static const GKO_INT64  MAX_LOG_BYTE =          4096;
 /// max length of a uri
@@ -143,15 +143,15 @@ static const int        HELO_RETRY_INTERVAL =   3;
 /// join retry interval, in seconds
 static const int        JOIN_RETRY_INTERVAL =   3;
 /// bind port try interval, in useconds
-static const int        BIND_INTERVAL =         10000;
+static const useconds_t BIND_INTERVAL =         10000;
 /// gko.sig_flag check interval, in useconds
-static const int        CK_SIG_INTERVAL =       200000;
+static const useconds_t CK_SIG_INTERVAL =       200000;
 /// GKO_INT64 int char
 static const int        MAX_LONG_INT =          19;
 /// default at MacOS is 512k
 static const int        MYSTACKSIZE =           (10 * 1024 * 1024);
 /// default server conn limit
-static const int        SERV_POOL_SIZE =        100000;
+static const int        SERV_POOL_SIZE =        200000;
 /// default client thread num
 static const int        SERV_ASYNC_THREAD_NUM = 16;
 /// default xor hash thread num
@@ -340,6 +340,28 @@ typedef struct _s_job_t s_job_t;
 typedef void * (*func_t)(void *, int);
 typedef void * (*ProcessHandler_t)(void *);
 typedef void (*ReportHandler_t)(void *, const char *);
+
+/**
+ * @brief How Many Bytes to Read
+ *      set "How Many To Read" handler
+ *      the handler prototype is as:
+ *          int (*HMTRHandler_t)(void *, const char *, const int);
+ *      @ret:
+ *          n == 0  --> need read more
+ *          n > 0   --> need read n byte(s) in total, NOT n byte(s) more!!
+ *          n < 0   --> an error in the message
+ *      @args:
+ *          void *          --> <struct conn_client *> for the specified connection
+ *          const char *    --> the data already read
+ *          const int       --> the data count already read, in byte
+ *
+ *
+ * @see
+ * @note
+ * @author auxten  <auxtenwpc@gmail.com>
+ * @date 2012-9-29
+ **/
+typedef int (*HMTRHandler_t)(void *, const char *, const int);
 
 /// file structure
 typedef struct _s_file_t
@@ -580,6 +602,8 @@ int writeblock(s_job_t * jo, const u_int8_t * buf, s_block_t * blk);
 int sendcmd2host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
 /// send cmd msg to host, read response, on succ return 0
 int chat_with_host(const s_host_t *h, const char * cmd, const int recv_sec, const int send_sec);
+/// try best send cmd to *fd, with retry twice then get response
+int chat_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, char * response, const int max_response, const int timeout);
 /// try best send cmd to *fd, with reconnect
 int send2host_fd(const char * host, const int port, int * fd, const char * cmd, const int cmd_len, const int timeout);
 /// try best to read specificed bytes from a file to buf
@@ -731,6 +755,7 @@ static inline int gsendfile(int out_fd, int in_fd, off_t *offset,
  * @date Jan 10, 2012
  **/
 static inline void fill_cmd_head(char * cmd, int msg_len)
+//static void fill_cmd_head(char * cmd, int msg_len)
 {
     memset(cmd, '0', CMD_PREFIX_BYTE);
 
