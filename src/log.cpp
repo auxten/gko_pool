@@ -107,6 +107,10 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
 
         len += snprintf(logstr + len, sizeof(logstr) - len, "[%s:%d @%s][%ldus]\t", file, line, func, usec_diff);
         len += vsnprintf(logstr + len, sizeof(logstr) - len, fmt, args);
+
+        logstr[sizeof(logstr) - 3] = '\0';
+        len = MIN(sizeof(logstr) - 3, len);
+
         if (log_level < NOTICE)
         {
             len += snprintf(logstr + len, sizeof(logstr) - len, "; ");
