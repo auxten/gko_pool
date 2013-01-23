@@ -16,7 +16,7 @@
 #include "dict.h"
 #include "gko.h"
 
-static const time_t        DNS_EXPIRE_TIME =           2 * 60 * 60;
+static const time_t        DNS_EXPIRE_TIME =           -1;
 
 typedef struct DNSCacheVal
 {
