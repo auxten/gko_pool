@@ -82,6 +82,12 @@ dict * gko_pool::init_dns_cache(void)
 int gko_pool::try_dns_cache(conn_client *c)
 {
     int ret;
+    if (DNS_EXPIRE_TIME <= 0)
+    {
+        ret = -1;
+        return ret;
+    }
+
     DNSCacheVal *val;
     time_t now = time(NULL);
 
@@ -114,6 +120,10 @@ int gko_pool::try_dns_cache(conn_client *c)
 
 void gko_pool::update_dns_cache(conn_client *c, in_addr_t addr)
 {
+    if (DNS_EXPIRE_TIME <= 0)
+    {
+        return;
+    }
     pthread_mutex_lock(&DNS_cache_lock);
     DNSCacheVal * val = (DNSCacheVal *)malloc(sizeof (DNSCacheVal));
     val->addr = addr;
