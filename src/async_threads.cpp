@@ -80,7 +80,7 @@ int gko_pool::thread_worker_new(int id)
 
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);
-    pthread_attr_setstacksize(&thread_attr, MYSTACKSIZE * 3);
+    pthread_attr_setstacksize(&thread_attr, MYSTACKSIZE);
     ///pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
     ret = pthread_create(&worker->tid, &thread_attr, thread_worker_init,
             (void *) worker);
