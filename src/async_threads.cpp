@@ -80,7 +80,7 @@ int gko_pool::thread_worker_new(int id)
 
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);
-    pthread_attr_setstacksize(&thread_attr, MYSTACKSIZE);
+    pthread_attr_setstacksize(&thread_attr, MYSTACKSIZE * 3);
     ///pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
     ret = pthread_create(&worker->tid, &thread_attr, thread_worker_init,
             (void *) worker);
@@ -569,6 +569,10 @@ enum awrite_result gko_pool::awrite(conn_client *c)
 //    mh.msg_iovlen = 2;
 //    mh.msg_accrights = NULL;            /* irrelevant to AF_INET */
 //    mh.msg_accrightslen = 0;            /* irrelevant to AF_INET */
+    if ((c->__need_write - c->have_write) == 0)
+    {
+        return WRITE_DATA_SENT;
+    }
 
     while (1)
     {
