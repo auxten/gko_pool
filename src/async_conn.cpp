@@ -117,6 +117,8 @@ int gko_pool::gko_async_server_base_init()
  **/
 int gko_pool::conn_tcp_server(struct conn_server *c)
 {
+    int flags;
+
     if (g_server->srv_port > MAX_PORT)
     {
         GKOLOG(FATAL, "serv port %d > %d", g_server->srv_port, MAX_PORT);
@@ -141,6 +143,11 @@ int gko_pool::conn_tcp_server(struct conn_server *c)
     {
         GKOLOG(WARNING, "Socket creation failed");
         return -1;
+    }
+
+    if ((flags = fcntl(g_server->listen_fd, F_GETFD)) != -1)
+    {
+        fcntl(g_server->listen_fd, F_SETFD, flags | FD_CLOEXEC);
     }
 
     g_server->listen_addr.sin_family = AF_INET;
