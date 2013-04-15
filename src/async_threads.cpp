@@ -569,6 +569,10 @@ enum awrite_result gko_pool::awrite(conn_client *c)
 //    mh.msg_iovlen = 2;
 //    mh.msg_accrights = NULL;            /* irrelevant to AF_INET */
 //    mh.msg_accrightslen = 0;            /* irrelevant to AF_INET */
+    if ((c->__need_write - c->have_write) == 0)
+    {
+        return WRITE_DATA_SENT;
+    }
 
     while (1)
     {
