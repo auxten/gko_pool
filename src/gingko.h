@@ -108,8 +108,10 @@ static const int        MAX_LIS_PORT =          60000;
 static const int        MAX_PACKET_LEN =        65536;
 /// for global locks
 static const int        MAX_JOBS =              1024;
+/// max log file keeped
+static const u_int      MAX_LOG_KEEPED =        3;
 /// max log line count flush log
-static const GKO_INT64  MAX_LOG_FLUSH_LINE =    10;
+static const GKO_INT64  MAX_LOG_FLUSH_LINE =    20;
 /// max log line count to reopen log file, in case of file mv
 static const GKO_INT64  MAX_LOG_REOPEN_LINE =   1000;
 /// max log line count
