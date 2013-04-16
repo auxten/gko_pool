@@ -141,7 +141,7 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
                     gettimestr(oldlogpath + strlen(oldlogpath), OLD_LOG_TIME, time_p);
                     rename(gko.opt.logpath, oldlogpath);
                     rm_cmd_len = snprintf(rmOldLogs, MAX_PATH_LEN - 1,
-                            "/bin/ls -t %s.20* | /usr/bin/tail -n +%u | /usr/bin/xargs /bin/rm -f",
+                            "/bin/ls -t %s.201* | /usr/bin/tail -n +%u | /usr/bin/xargs /bin/rm -f",
                             gko.opt.logpath, MAX_LOG_KEEPED);
                     if (strlen(gko.opt.logpath) > 0 &&
                             rm_cmd_len < MAX_PATH_LEN &&
