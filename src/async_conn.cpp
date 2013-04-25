@@ -568,6 +568,7 @@ int gko_pool::conn_renew(struct conn_client *client)
 #else
         client->__write_buffer = (char *)malloc(WBUF_SZ);
 #endif
+        client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
 
         client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
         client->have_write = 0;
