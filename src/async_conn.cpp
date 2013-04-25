@@ -533,6 +533,7 @@ int gko_pool::conn_renew(struct conn_client *client)
 
         client->w_buf_arena_id = worker->mem.get_block();
         client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
+        client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
 
         client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
         client->have_write = 0;
