@@ -88,6 +88,7 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
         va_start(args, fmt);
         char logstr[MAX_LOG_BYTE];
         char oldlogpath[MAX_PATH_LEN];
+        char rmOldLogs[MAX_PATH_LEN];
         static FILE * lastfp = NULL;
         static GKO_INT64 counter = 1;
         struct timeval last_timeval;
@@ -95,6 +96,7 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
         struct timeval * time_p = get_timer();
         long usec_diff;
         int len = 0;
+        int rm_cmd_len;
 
         memcpy(&last_timeval, time_p, sizeof(last_timeval));
 
@@ -138,6 +140,17 @@ void gko_log_flf(const u_int8_t log_level, const char *file, const int line, con
                     strncpy(oldlogpath, gko.opt.logpath, MAX_PATH_LEN - 1);
                     gettimestr(oldlogpath + strlen(oldlogpath), OLD_LOG_TIME, time_p);
                     rename(gko.opt.logpath, oldlogpath);
+                    rm_cmd_len = snprintf(rmOldLogs, MAX_PATH_LEN - 1,
+                            "/bin/ls -t %s.201* | /usr/bin/tail -n +%u | /usr/bin/xargs /bin/rm -f",
+                            gko.opt.logpath, MAX_LOG_KEEPED);
+                    if (strlen(gko.opt.logpath) > 0 &&
+                            rm_cmd_len < MAX_PATH_LEN &&
+                            rm_cmd_len > 0)
+                    {
+                        rmOldLogs[rm_cmd_len] = '\0';
+                        system(rmOldLogs);
+                    }
+
                 }
                 gko.log_fp = fopen(gko.opt.logpath, "a+");
             }
