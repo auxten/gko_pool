@@ -398,7 +398,7 @@ int sendall(int fd, const void * void_p, int sz, int timeout)
         }
         else if (!select_ret)
         {
-            GKOLOG(NOTICE, "select/poll timeout on sendall");
+            GKOLOG(DEBUG, "select/poll timeout on sendall");
             return -1;
         }
         else
@@ -1095,7 +1095,7 @@ int send2host_fd(const char * host, const int port, int * fd, const char * cmd, 
     result = sendall(*fd, cmd, cmd_len, timeout);
     if (result <= 0)
     {
-        GKOLOG(WARNING, FLF("sendall failed"));
+        GKOLOG(DEBUG, FLF("sendall failed"));
         close_socket(*fd);
         *fd = -1;
         return result;

@@ -728,6 +728,7 @@ void gko_pool::state_machine(conn_client *c)
                         conn_set_state(c, conn_parse_cmd);
                         break;
                     case READ_NEED_MORE:
+                        c->conn_time = time(NULL);
                         break;
                     case READ_ERROR:
                         if (c->type == active_conn)
@@ -863,7 +864,7 @@ void gko_pool::state_machine(conn_client *c)
                         break;
 
                     case WRITE_ERROR:
-                        GKOLOG(WARNING, "write to socket error, closing");
+                        GKOLOG(DEBUG, "write to socket error, closing");
                         if (c->type == active_conn)
                         {
                             c->err_no = DISPATCH_SEND_ERROR;
