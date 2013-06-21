@@ -385,19 +385,29 @@ void gko_pool::conn_buffer_init(conn_client *client)
     thread_worker * worker = *(Pool->g_worker_list + client->worker_id);
 
     client->err_no = INVILID;
+#if defined (USE_GKO_MEMORY_POOL)
     /// todo calloc every connection comes?
     client->r_buf_arena_id = worker->mem.get_block();
     client->w_buf_arena_id = worker->mem.get_block();
     assert(client->r_buf_arena_id >= 0);
     assert(client->w_buf_arena_id >= 0);
+#endif
 
+#if defined (USE_GKO_MEMORY_POOL)
     client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
+#else
+    client->read_buffer = (char *)malloc(RBUF_SZ);
+#endif
     client->rbuf_size = RBUF_SZ;
     client->have_read = 0;
     client->need_read = CMD_PREFIX_BYTE;
 
     /// todo calloc every connection comes?
+#if defined (USE_GKO_MEMORY_POOL)
     client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
+#else
+    client->__write_buffer = (char *)malloc(WBUF_SZ);
+#endif
     client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
     client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
     client->have_write = 0;
@@ -427,6 +437,7 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         /// todo free every connection comes?
         if (client->read_buffer)
         {
+#if defined (USE_GKO_MEMORY_POOL)
             if(client->r_buf_arena_id >= 0)
             {
                 worker->mem.free_block(client->r_buf_arena_id);
@@ -435,9 +446,13 @@ int gko_pool::conn_client_clear(struct conn_client *client)
             }
             else
             {
+#endif
+
                 free(client->read_buffer);
                 client->read_buffer = NULL;
+#if defined (USE_GKO_MEMORY_POOL)
             }
+#endif
         }
         client->rbuf_size = RBUF_SZ;
         client->have_read = 0;
@@ -446,6 +461,7 @@ int gko_pool::conn_client_clear(struct conn_client *client)
         /// todo free every connection comes?
         if (client->__write_buffer)
         {
+#if defined (USE_GKO_MEMORY_POOL)
             if(client->w_buf_arena_id >= 0)
             {
                 worker->mem.free_block(client->w_buf_arena_id);
@@ -454,9 +470,12 @@ int gko_pool::conn_client_clear(struct conn_client *client)
             }
             else
             {
+#endif
                 free(client->__write_buffer);
                 client->__write_buffer = NULL;
+#if defined (USE_GKO_MEMORY_POOL)
             }
+#endif
         }
         client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;
         client->have_write = 0;
@@ -495,6 +514,7 @@ int gko_pool::conn_renew(struct conn_client *client)
 
         if (client->read_buffer)
         {
+#if defined (USE_GKO_MEMORY_POOL)
             if(client->r_buf_arena_id >= 0)
             {
                 worker->mem.free_block(client->r_buf_arena_id);
@@ -503,13 +523,20 @@ int gko_pool::conn_renew(struct conn_client *client)
             }
             else
             {
+#endif
                 free(client->read_buffer);
                 client->read_buffer = NULL;
+#if defined (USE_GKO_MEMORY_POOL)
             }
+#endif
         }
 
+#if defined (USE_GKO_MEMORY_POOL)
         client->r_buf_arena_id = worker->mem.get_block();
         client->read_buffer = (char *)worker->mem.id2addr(client->r_buf_arena_id);
+#else
+        client->read_buffer = (char *)malloc(RBUF_SZ);
+#endif
 
         client->rbuf_size = RBUF_SZ;
         client->have_read = 0;
@@ -518,6 +545,7 @@ int gko_pool::conn_renew(struct conn_client *client)
         /// todo free every connection comes?
         if (client->__write_buffer)
         {
+#if defined (USE_GKO_MEMORY_POOL)
             if(client->w_buf_arena_id >= 0)
             {
                 worker->mem.free_block(client->w_buf_arena_id);
@@ -526,13 +554,20 @@ int gko_pool::conn_renew(struct conn_client *client)
             }
             else
             {
+#endif
                 free(client->__write_buffer);
                 client->__write_buffer = NULL;
+#if defined (USE_GKO_MEMORY_POOL)
             }
+#endif
         }
 
+#if defined (USE_GKO_MEMORY_POOL)
         client->w_buf_arena_id = worker->mem.get_block();
         client->__write_buffer = (char *)worker->mem.id2addr(client->w_buf_arena_id);
+#else
+        client->__write_buffer = (char *)malloc(WBUF_SZ);
+#endif
         client->write_buffer = client->__write_buffer + CMD_PREFIX_BYTE;
 
         client->wbuf_size = WBUF_SZ - CMD_PREFIX_BYTE;

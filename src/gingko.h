@@ -51,6 +51,7 @@
 #ifndef GINGKO_H_
 #define GINGKO_H_
 
+
 #define                 USE_GKO_MEMORY_POOL
 #define                 NO_SO_CALLED_FNV_OPTIMIZE
 #define                 ROT_XOR_HASH
