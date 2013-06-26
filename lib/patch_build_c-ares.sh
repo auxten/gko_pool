@@ -1,7 +1,7 @@
 #!/bin/sh
 
 NAME='c-ares'
-VER='1.8.0'
+VER='1.10.0'
 TYPE='tar.gz'
 CONFIGURE_FLAGS=''
 
