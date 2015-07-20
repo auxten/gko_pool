@@ -5,11 +5,11 @@
  \__, |_|\_\___/____| .__/ \___/ \___/|_|
  |___/        |_____|_|                  
 
-gko_pool:
-    an async multithread server client framework
+# gko_pool:
+* an async multithread server client framework
 
-author:
-    auxten <auxtenwpc[at]gmail.com>
+# author:
+* auxten <auxtenwpc[at]gmail.com>
     
-site:
-    http://linrc.com/gko_pool
+# site:
+* http://blog.51reboot.com/gko_pool
